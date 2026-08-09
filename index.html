@@ -586,19 +586,19 @@
                 <!-- Total Budget Hero Box -->
                 <div class="budget-hero">
                     <div class="control-group" style="margin-bottom:0;">
-                        <label class="control-label" for="budget">
+                        <label class="control-label" for="budget-num">
                             <span class="label-left" style="font-size: 1rem;">Total Monthly Budget</span> 
-                            <span class="val-container">€<input type="number" id="budget-num" min="500" max="2000" value="933" class="num-input"></span>
+                            <span class="val-container">€<input type="number" id="budget-num" min="0" max="2000" value="933" class="num-input"></span>
                         </label>
-                        <input type="range" id="budget" min="500" max="2000" value="933">
+                        <input type="range" id="budget" min="0" max="2000" value="933">
                     </div>
                 </div>
 
                 <!-- Individual Expenses -->
                 <div class="control-group">
-                    <label class="control-label" for="groceries">
+                    <label class="control-label" for="groceries-num">
                         <span class="label-left">
-                            <span class="color-dot" style="background-color: var(--color-groceries);"></span> Groceries
+                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-groceries);"></span> Groceries
                         </span>
                         <span class="val-container">€<input type="number" id="groceries-num" min="0" max="1000" value="200" class="num-input"></span>
                     </label>
@@ -606,9 +606,9 @@
                 </div>
 
                 <div class="control-group">
-                    <label class="control-label" for="meals">
+                    <label class="control-label" for="meals-num">
                         <span class="label-left">
-                            <span class="color-dot" style="background-color: var(--color-meals);"></span> Campus Meals
+                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-meals);"></span> Campus Meals
                         </span>
                         <span class="val-container">€<input type="number" id="meals-num" min="0" max="1000" value="65" class="num-input"></span>
                     </label>
@@ -616,9 +616,9 @@
                 </div>
 
                 <div class="control-group">
-                    <label class="control-label" for="transport">
+                    <label class="control-label" for="transport-num">
                         <span class="label-left">
-                            <span class="color-dot" style="background-color: var(--color-transport);"></span> Transport
+                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-transport);"></span> Transport
                         </span>
                         <span class="val-container">€<input type="number" id="transport-num" min="0" max="1000" value="47" class="num-input"></span>
                     </label>
@@ -626,9 +626,9 @@
                 </div>
 
                 <div class="control-group">
-                    <label class="control-label" for="fees">
+                    <label class="control-label" for="fees-num">
                         <span class="label-left">
-                            <span class="color-dot" style="background-color: var(--color-fees);"></span> Fees & Health
+                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-fees);"></span> Fees & Health
                         </span>
                         <span class="val-container">€<input type="number" id="fees-num" min="0" max="1000" value="12" class="num-input"></span>
                     </label>
@@ -636,9 +636,9 @@
                 </div>
 
                 <div class="control-group">
-                    <label class="control-label" for="leisure">
+                    <label class="control-label" for="leisure-num">
                         <span class="label-left">
-                            <span class="color-dot" style="background-color: var(--color-leisure);"></span> Leisure & Other
+                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-leisure);"></span> Leisure & Other
                         </span>
                         <span class="val-container">€<input type="number" id="leisure-num" min="0" max="1000" value="150" class="num-input"></span>
                     </label>
@@ -688,12 +688,12 @@
 
                 <!-- Log Entry Form -->
                 <form class="log-form" id="log-form">
-                    <select class="select-input" id="log-type">
+                    <select class="select-input" id="log-type" aria-label="Transaction Type">
                         <option value="expense">Expense</option>
                         <option value="income">Income / Grant</option>
                     </select>
-                    <input type="text" class="text-input" id="log-desc" placeholder="e.g. Prisma Groceries, Kela, Sitsit" required>
-                    <select class="select-input" id="log-category">
+                    <input type="text" class="text-input" id="log-desc" placeholder="e.g. Prisma Groceries, Kela, Sitsit" required aria-label="Transaction Description">
+                    <select class="select-input" id="log-category" aria-label="Transaction Category">
                         <option value="Groceries">Groceries</option>
                         <option value="Campus Meals">Campus Meals</option>
                         <option value="Transport">Transport</option>
@@ -701,7 +701,7 @@
                         <option value="Leisure & Other">Leisure & Other</option>
                         <option value="Income">Income/Allowance</option>
                     </select>
-                    <input type="number" class="num-input" id="log-amount" style="width: 100%; text-align: left;" placeholder="€ Amount" step="0.01" min="0.01" required>
+                    <input type="number" class="num-input" id="log-amount" style="width: 100%; text-align: left;" placeholder="€ Amount" step="0.01" min="0.01" required aria-label="Transaction Amount">
                     <button type="submit" class="btn-add">+ Log</button>
                 </form>
 
@@ -849,7 +849,7 @@
         function saveToStorage() {
             const data = {};
             keys.forEach(key => {
-                data[key] = parseInt(document.getElementById(`${key}-num`).value) || 0;
+                data[key] = Math.max(0, parseInt(document.getElementById(`${key}-num`).value) || 0);
             });
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
@@ -864,13 +864,14 @@
                     if (data[key] !== undefined) {
                         const slider = document.getElementById(key);
                         const numInput = document.getElementById(`${key}-num`);
+                        const cleanVal = Math.max(0, data[key]);
                         
-                        if (data[key] > parseInt(slider.max)) {
-                            slider.max = data[key];
+                        if (cleanVal > parseInt(slider.max)) {
+                            slider.max = cleanVal;
                         }
                         
-                        slider.value = data[key];
-                        numInput.value = data[key];
+                        slider.value = cleanVal;
+                        numInput.value = cleanVal;
                     }
                 });
             } catch (e) {
@@ -904,7 +905,7 @@
 
             numInput.addEventListener('input', () => {
                 let val = parseInt(numInput.value);
-                if (isNaN(val)) val = 0;
+                if (isNaN(val) || val < 0) val = 0;
                 
                 if (val > parseInt(slider.max)) {
                     slider.max = val;
@@ -920,12 +921,12 @@
 
         // Core Chart & KPI Rendering Function
         function updateChart() {
-            const budget = parseInt(document.getElementById('budget-num').value) || 0;
-            const groceries = parseInt(document.getElementById('groceries-num').value) || 0;
-            const meals = parseInt(document.getElementById('meals-num').value) || 0;
-            const transport = parseInt(document.getElementById('transport-num').value) || 0;
-            const fees = parseInt(document.getElementById('fees-num').value) || 0;
-            const leisure = parseInt(document.getElementById('leisure-num').value) || 0;
+            const budget = Math.max(0, parseInt(document.getElementById('budget-num').value) || 0);
+            const groceries = Math.max(0, parseInt(document.getElementById('groceries-num').value) || 0);
+            const meals = Math.max(0, parseInt(document.getElementById('meals-num').value) || 0);
+            const transport = Math.max(0, parseInt(document.getElementById('transport-num').value) || 0);
+            const fees = Math.max(0, parseInt(document.getElementById('fees-num').value) || 0);
+            const leisure = Math.max(0, parseInt(document.getElementById('leisure-num').value) || 0);
 
             const totalExpenses = groceries + meals + transport + fees + leisure;
             const surplus = budget - totalExpenses;
@@ -1064,7 +1065,7 @@
                 legendItem.className = 'legend-item';
                 legendItem.innerHTML = `
                     <div class="legend-label-group">
-                        <span class="color-dot" style="background-color: ${colorMap[item.category]};"></span>
+                        <span class="color-dot" aria-hidden="true" style="background-color: ${colorMap[item.category]};"></span>
                         <span>${item.category}</span>
                     </div>
                     <span class="legend-value">€${item.value} (${pct}%)</span>
@@ -1108,14 +1109,15 @@
                 const tr = document.createElement('tr');
                 const badgeClass = item.type === 'income' ? 'badge-income' : 'badge-expense';
                 const amountPrefix = item.type === 'income' ? '+€' : '-€';
+                const safeDesc = escapeHtml(item.desc);
 
                 tr.innerHTML = `
                     <td>${item.date}</td>
                     <td><span class="badge ${badgeClass}">${item.type.toUpperCase()}</span></td>
-                    <td><strong>${escapeHtml(item.desc)}</strong></td>
+                    <td><strong>${safeDesc}</strong></td>
                     <td>${item.category}</td>
                     <td style="font-weight:700;">${amountPrefix}${parseFloat(item.amount).toFixed(2)}</td>
-                    <td><button class="btn-del" onclick="deleteTransaction(${index})" title="Delete entry">&times;</button></td>
+                    <td><button class="btn-del" aria-label="Delete entry: ${safeDesc}" onclick="deleteTransaction(${index})" title="Delete entry">&times;</button></td>
                 `;
                 tbody.appendChild(tr);
             });

@@ -753,6 +753,15 @@
             leisure: 500
         };
 
+        const categoryMap = {
+            'Groceries': 'groceries',
+            'Campus Meals': 'meals',
+            'Transport': 'transport',
+            'Fees & Health': 'fees',
+            'Leisure & Other': 'leisure',
+            'Income': 'budget'
+        };
+
         let transactions = [];
 
         // D3 Chart Dimensions
@@ -1139,12 +1148,46 @@
             transactions.unshift(newEntry);
             saveTransactions();
 
+            // Sync transaction with Budget Controls & Donut Chart
+            let targetKey = type === 'income' ? 'budget' : categoryMap[category];
+            if (targetKey) {
+                const numInput = document.getElementById(`${targetKey}-num`);
+                const slider = document.getElementById(targetKey);
+                let currentVal = parseFloat(numInput.value) || 0;
+                let newVal = Math.round(currentVal + amount);
+
+                if (newVal > parseInt(slider.max)) slider.max = newVal;
+                numInput.value = newVal;
+                slider.value = newVal;
+
+                saveToStorage();
+                updateChart();
+            }
+
             // Reset form
             document.getElementById('log-desc').value = '';
             document.getElementById('log-amount').value = '';
         });
 
         function deleteTransaction(index) {
+            const item = transactions[index];
+            
+            if (item) {
+                let targetKey = item.type === 'income' ? 'budget' : categoryMap[item.category];
+                if (targetKey) {
+                    const numInput = document.getElementById(`${targetKey}-num`);
+                    const slider = document.getElementById(targetKey);
+                    let currentVal = parseFloat(numInput.value) || 0;
+                    let newVal = Math.max(0, Math.round(currentVal - item.amount));
+
+                    numInput.value = newVal;
+                    slider.value = newVal;
+
+                    saveToStorage();
+                    updateChart();
+                }
+            }
+
             transactions.splice(index, 1);
             saveTransactions();
         }

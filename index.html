@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lappeenranta Student Budget & Tracker</title>
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/wallet.png">
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -250,7 +250,7 @@
         }
 
         .num-input {
-            width: 76px;
+            width: 84px;
             text-align: right;
         }
 
@@ -466,6 +466,9 @@
             .log-form {
                 grid-template-columns: 1fr 1fr;
             }
+            .log-form .btn-add {
+                grid-column: 1 / -1;
+            }
         }
 
         .btn-add {
@@ -550,7 +553,7 @@
 
     <div class="dashboard-container">
         
-        <!-- Top Action Buttons (Export, Import, Theme Toggle) -->
+        <!-- Top Action Buttons -->
         <div class="top-header-actions" style="gap: 8px;">
             <button class="btn-theme" onclick="exportData()" title="Download budget & transactions backup">📥 Export</button>
             <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore budget & transactions from JSON file">📤 Import</button>
@@ -588,7 +591,7 @@
                     <div class="control-group" style="margin-bottom:0;">
                         <label class="control-label" for="budget-num">
                             <span class="label-left" style="font-size: 1rem;">Total Monthly Budget</span> 
-                            <span class="val-container">€<input type="number" id="budget-num" min="0" max="2000" value="933" class="num-input"></span>
+                            <span class="val-container">€<input type="number" id="budget-num" min="0" max="2000" step="any" value="933" class="num-input"></span>
                         </label>
                         <input type="range" id="budget" min="0" max="2000" value="933">
                     </div>
@@ -600,7 +603,7 @@
                         <span class="label-left">
                             <span class="color-dot" aria-hidden="true" style="background-color: var(--color-groceries);"></span> Groceries
                         </span>
-                        <span class="val-container">€<input type="number" id="groceries-num" min="0" max="1000" value="200" class="num-input"></span>
+                        <span class="val-container">€<input type="number" id="groceries-num" min="0" max="1000" step="any" value="200" class="num-input"></span>
                     </label>
                     <input type="range" id="groceries" min="0" max="600" value="200">
                 </div>
@@ -610,7 +613,7 @@
                         <span class="label-left">
                             <span class="color-dot" aria-hidden="true" style="background-color: var(--color-meals);"></span> Campus Meals
                         </span>
-                        <span class="val-container">€<input type="number" id="meals-num" min="0" max="1000" value="65" class="num-input"></span>
+                        <span class="val-container">€<input type="number" id="meals-num" min="0" max="1000" step="any" value="65" class="num-input"></span>
                     </label>
                     <input type="range" id="meals" min="0" max="250" value="65">
                 </div>
@@ -620,7 +623,7 @@
                         <span class="label-left">
                             <span class="color-dot" aria-hidden="true" style="background-color: var(--color-transport);"></span> Transport
                         </span>
-                        <span class="val-container">€<input type="number" id="transport-num" min="0" max="1000" value="47" class="num-input"></span>
+                        <span class="val-container">€<input type="number" id="transport-num" min="0" max="1000" step="any" value="47" class="num-input"></span>
                     </label>
                     <input type="range" id="transport" min="0" max="200" value="47">
                 </div>
@@ -630,7 +633,7 @@
                         <span class="label-left">
                             <span class="color-dot" aria-hidden="true" style="background-color: var(--color-fees);"></span> Fees & Health
                         </span>
-                        <span class="val-container">€<input type="number" id="fees-num" min="0" max="1000" value="12" class="num-input"></span>
+                        <span class="val-container">€<input type="number" id="fees-num" min="0" max="1000" step="any" value="12" class="num-input"></span>
                     </label>
                     <input type="range" id="fees" min="0" max="150" value="12">
                 </div>
@@ -640,12 +643,12 @@
                         <span class="label-left">
                             <span class="color-dot" aria-hidden="true" style="background-color: var(--color-leisure);"></span> Leisure & Other
                         </span>
-                        <span class="val-container">€<input type="number" id="leisure-num" min="0" max="1000" value="150" class="num-input"></span>
+                        <span class="val-container">€<input type="number" id="leisure-num" min="0" max="1000" step="any" value="150" class="num-input"></span>
                     </label>
                     <input type="range" id="leisure" min="0" max="500" value="150">
                 </div>
 
-                <!-- Student Quick-Add Presets -->
+                <!-- Student Quick Presets -->
                 <div class="preset-container">
                     <div class="preset-title">Student Quick Presets</div>
                     <div class="preset-buttons">
@@ -764,6 +767,20 @@
 
         let transactions = [];
 
+        // Helper: Local Date Format (YYYY-MM-DD) avoiding UTC offsets
+        function getLocalDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Format currency helper
+        function formatMoney(val) {
+            return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
+        }
+
         // D3 Chart Dimensions
         const width = 260;
         const height = 260;
@@ -779,6 +796,12 @@
             .style("height", "auto")
             .append("g")
             .attr("transform", `translate(${width / 2},${height / 2})`);
+
+        // Empty state background ring
+        const emptyRing = svg.append("path")
+            .attr("class", "empty-ring")
+            .attr("fill", "var(--border-color)")
+            .style("display", "none");
 
         // Center Labels inside Donut Chart
         const centerGroup = svg.append("g").attr("class", "center-group");
@@ -834,10 +857,10 @@
         function addPreset(categoryKey, amount) {
             const numInput = document.getElementById(`${categoryKey}-num`);
             const slider = document.getElementById(categoryKey);
-            let currentVal = parseInt(numInput.value) || 0;
-            let newVal = currentVal + amount;
+            let currentVal = parseFloat(numInput.value) || 0;
+            let newVal = Math.round((currentVal + amount) * 100) / 100;
 
-            if (newVal > parseInt(slider.max)) slider.max = newVal;
+            if (newVal > parseFloat(slider.max)) slider.max = Math.ceil(newVal);
             numInput.value = newVal;
             slider.value = newVal;
 
@@ -849,7 +872,8 @@
         function saveToStorage() {
             const data = {};
             keys.forEach(key => {
-                data[key] = Math.max(0, parseInt(document.getElementById(`${key}-num`).value) || 0);
+                const val = parseFloat(document.getElementById(`${key}-num`).value) || 0;
+                data[key] = Math.max(0, Math.round(val * 100) / 100);
             });
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
@@ -864,10 +888,10 @@
                     if (data[key] !== undefined) {
                         const slider = document.getElementById(key);
                         const numInput = document.getElementById(`${key}-num`);
-                        const cleanVal = Math.max(0, data[key]);
+                        const cleanVal = Math.max(0, parseFloat(data[key]) || 0);
                         
-                        if (cleanVal > parseInt(slider.max)) {
-                            slider.max = cleanVal;
+                        if (cleanVal > parseFloat(slider.max)) {
+                            slider.max = Math.ceil(cleanVal);
                         }
                         
                         slider.value = cleanVal;
@@ -892,7 +916,7 @@
             updateChart();
         }
 
-        // Two-way sync binding
+        // Two-way sync binding (Float safe)
         keys.forEach(key => {
             const slider = document.getElementById(key);
             const numInput = document.getElementById(`${key}-num`);
@@ -904,11 +928,11 @@
             });
 
             numInput.addEventListener('input', () => {
-                let val = parseInt(numInput.value);
+                let val = parseFloat(numInput.value);
                 if (isNaN(val) || val < 0) val = 0;
                 
-                if (val > parseInt(slider.max)) {
-                    slider.max = val;
+                if (val > parseFloat(slider.max)) {
+                    slider.max = Math.ceil(val);
                 }
                 
                 slider.value = val;
@@ -921,19 +945,19 @@
 
         // Core Chart & KPI Rendering Function
         function updateChart() {
-            const budget = Math.max(0, parseInt(document.getElementById('budget-num').value) || 0);
-            const groceries = Math.max(0, parseInt(document.getElementById('groceries-num').value) || 0);
-            const meals = Math.max(0, parseInt(document.getElementById('meals-num').value) || 0);
-            const transport = Math.max(0, parseInt(document.getElementById('transport-num').value) || 0);
-            const fees = Math.max(0, parseInt(document.getElementById('fees-num').value) || 0);
-            const leisure = Math.max(0, parseInt(document.getElementById('leisure-num').value) || 0);
+            const budget = Math.max(0, parseFloat(document.getElementById('budget-num').value) || 0);
+            const groceries = Math.max(0, parseFloat(document.getElementById('groceries-num').value) || 0);
+            const meals = Math.max(0, parseFloat(document.getElementById('meals-num').value) || 0);
+            const transport = Math.max(0, parseFloat(document.getElementById('transport-num').value) || 0);
+            const fees = Math.max(0, parseFloat(document.getElementById('fees-num').value) || 0);
+            const leisure = Math.max(0, parseFloat(document.getElementById('leisure-num').value) || 0);
 
-            const totalExpenses = groceries + meals + transport + fees + leisure;
-            const surplus = budget - totalExpenses;
+            const totalExpenses = Math.round((groceries + meals + transport + fees + leisure) * 100) / 100;
+            const surplus = Math.round((budget - totalExpenses) * 100) / 100;
 
-            // Update Top KPI Cards
-            document.getElementById('kpi-budget').textContent = `€${budget}`;
-            document.getElementById('kpi-expenses').textContent = `€${totalExpenses}`;
+            // Update Top KPI Cards with float formatting
+            document.getElementById('kpi-budget').textContent = `€${formatMoney(budget)}`;
+            document.getElementById('kpi-expenses').textContent = `€${formatMoney(totalExpenses)}`;
 
             const surplusCard = document.getElementById('kpi-surplus-card');
             const surplusLabel = document.getElementById('kpi-surplus-label');
@@ -943,13 +967,13 @@
             if (surplus < 0) {
                 surplusCard.className = "kpi-card deficit";
                 surplusLabel.textContent = "Deficit";
-                surplusVal.textContent = `-€${Math.abs(surplus)}`;
+                surplusVal.textContent = `-€${formatMoney(Math.abs(surplus))}`;
                 warningEl.style.display = "block";
-                warningEl.textContent = `Warning: Over budget by €${Math.abs(surplus)}!`;
+                warningEl.textContent = `Warning: Over budget by €${formatMoney(Math.abs(surplus))}!`;
             } else {
                 surplusCard.className = "kpi-card surplus";
                 surplusLabel.textContent = "Remaining Surplus";
-                surplusVal.textContent = `€${surplus}`;
+                surplusVal.textContent = `€${formatMoney(surplus)}`;
                 warningEl.style.display = "none";
             }
 
@@ -958,7 +982,7 @@
             const progressBar = document.getElementById('progress-bar');
             const progressStatus = document.getElementById('progress-status');
 
-            progressStatus.textContent = `${usedPercentage}% (€${totalExpenses} / €${budget})`;
+            progressStatus.textContent = `${usedPercentage}% (€${formatMoney(totalExpenses)} / €${formatMoney(budget)})`;
             progressBar.style.width = `${Math.min(usedPercentage, 100)}%`;
 
             if (usedPercentage > 100) {
@@ -969,10 +993,10 @@
                 progressBar.style.backgroundColor = "var(--color-meals)";
             }
 
-            // Donut Center Text shows TOTAL ALLOCATED EXPENSES
-            centerAmount.text(`€${totalExpenses}`);
+            // Donut Center Text
+            centerAmount.text(`€${formatMoney(totalExpenses)}`);
 
-            // Prepare Chart Data (EXPENSES ONLY - Excludes Surplus)
+            // Prepare Chart Data
             let data = [
                 { category: "Groceries", value: groceries },
                 { category: "Campus Meals", value: meals },
@@ -983,16 +1007,29 @@
 
             // Filter out 0 value slices
             data = data.filter(d => d.value > 0);
+
+            // Handle Empty / 0 Expense State to prevent NaN D3 Glitch
+            if (totalExpenses === 0 || data.length === 0) {
+                emptyRing.attr("d", arc({ startAngle: 0, endAngle: 2 * Math.PI })).style("display", "block");
+                svg.selectAll("path.slice").remove();
+                svg.selectAll(".slice-label").remove();
+                document.getElementById('legend').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size:0.85rem;">No active expense allocations</div>';
+                return;
+            } else {
+                emptyRing.style("display", "none");
+            }
+
             const pieData = pie(data);
 
             // Render Donut Slices
-            const paths = svg.selectAll("path")
+            const paths = svg.selectAll("path.slice")
                 .data(pieData, d => d.data.category);
 
             paths.exit().remove();
 
             const newPaths = paths.enter()
                 .append("path")
+                .attr("class", "slice")
                 .attr("fill", d => colorMap[d.data.category])
                 .attr("stroke", "var(--card-bg)")
                 .style("stroke-width", "2px")
@@ -1001,9 +1038,9 @@
                       .transition().duration(150)
                       .attr("d", arcHover);
 
-                    const pct = totalExpenses > 0 ? ((d.data.value / totalExpenses) * 100).toFixed(1) : 0;
+                    const pct = ((d.data.value / totalExpenses) * 100).toFixed(1);
                     tooltip.style("opacity", 1)
-                           .html(`<strong>${d.data.category}</strong><br>€${d.data.value} (${pct}% of spent)`);
+                           .html(`<strong>${d.data.category}</strong><br>€${formatMoney(d.data.value)} (${pct}% of spent)`);
                 })
                 .on("mousemove", function(event) {
                     const [x, y] = d3.pointer(event, document.querySelector('.chart-container'));
@@ -1018,7 +1055,7 @@
                     tooltip.style("opacity", 0);
                 });
 
-            // Smooth D3 Transition Fix
+            // Smooth D3 Transition
             paths.merge(newPaths)
                 .transition().duration(400)
                 .attrTween("d", function(d) {
@@ -1051,7 +1088,7 @@
                     return `translate(${arc.centroid(d)})`;
                 })
                 .text(d => {
-                    const pct = totalExpenses > 0 ? (d.data.value / totalExpenses) * 100 : 0;
+                    const pct = (d.data.value / totalExpenses) * 100;
                     return pct >= 6 ? `${Math.round(pct)}%` : '';
                 });
 
@@ -1060,7 +1097,7 @@
             legendEl.innerHTML = '';
             
             data.forEach(item => {
-                const pct = totalExpenses > 0 ? ((item.value / totalExpenses) * 100).toFixed(1) : 0;
+                const pct = ((item.value / totalExpenses) * 100).toFixed(1);
                 const legendItem = document.createElement('div');
                 legendItem.className = 'legend-item';
                 legendItem.innerHTML = `
@@ -1068,7 +1105,7 @@
                         <span class="color-dot" aria-hidden="true" style="background-color: ${colorMap[item.category]};"></span>
                         <span>${item.category}</span>
                     </div>
-                    <span class="legend-value">€${item.value} (${pct}%)</span>
+                    <span class="legend-value">€${formatMoney(item.value)} (${pct}%)</span>
                 `;
                 legendEl.appendChild(legendItem);
             });
@@ -1140,7 +1177,7 @@
             if (!desc || isNaN(amount) || amount <= 0) return;
 
             const newEntry = {
-                date: new Date().toISOString().split('T')[0],
+                date: getLocalDateString(),
                 type,
                 desc,
                 category,
@@ -1156,9 +1193,9 @@
                 const numInput = document.getElementById(`${targetKey}-num`);
                 const slider = document.getElementById(targetKey);
                 let currentVal = parseFloat(numInput.value) || 0;
-                let newVal = Math.round(currentVal + amount);
+                let newVal = Math.round((currentVal + amount) * 100) / 100;
 
-                if (newVal > parseInt(slider.max)) slider.max = newVal;
+                if (newVal > parseFloat(slider.max)) slider.max = Math.ceil(newVal);
                 numInput.value = newVal;
                 slider.value = newVal;
 
@@ -1180,7 +1217,7 @@
                     const numInput = document.getElementById(`${targetKey}-num`);
                     const slider = document.getElementById(targetKey);
                     let currentVal = parseFloat(numInput.value) || 0;
-                    let newVal = Math.max(0, Math.round(currentVal - item.amount));
+                    let newVal = Math.max(0, Math.round((currentVal - item.amount) * 100) / 100);
 
                     numInput.value = newVal;
                     slider.value = newVal;
@@ -1209,7 +1246,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `lappeenranta_budget_backup_${new Date().toISOString().split('T')[0]}.json`);
+            downloadAnchor.setAttribute("download", `lappeenranta_budget_backup_${getLocalDateString()}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();

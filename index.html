@@ -5,8 +5,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lappeenranta Student Budget & Tracker</title>
+    <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/wallet.png">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         :root {
@@ -550,18 +550,16 @@
 
     <div class="dashboard-container">
         
-        <div class="dashboard-container">
-    
-    <!-- Top Action Buttons (Export, Import, Theme Toggle) -->
-    <div class="top-header-actions" style="gap: 8px;">
-        <button class="btn-theme" onclick="exportData()" title="Download budget & transactions backup">📥 Export</button>
-        <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore budget & transactions from JSON file">📤 Import</button>
-        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
-        <button class="btn-theme" id="theme-toggle" title="Toggle Dark/Light Mode">🌙 Dark Mode</button>
-    </div>
+        <!-- Top Action Buttons (Export, Import, Theme Toggle) -->
+        <div class="top-header-actions" style="gap: 8px;">
+            <button class="btn-theme" onclick="exportData()" title="Download budget & transactions backup">📥 Export</button>
+            <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore budget & transactions from JSON file">📤 Import</button>
+            <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+            <button class="btn-theme" id="theme-toggle" title="Toggle Dark/Light Mode">🌙 Dark Mode</button>
+        </div>
 
-    <!-- Top KPI Bar -->
-    <div class="kpi-grid">
+        <!-- Top KPI Bar -->
+        <div class="kpi-grid">
             <div class="kpi-card">
                 <span class="kpi-label">Total Monthly Budget</span>
                 <span class="kpi-value" id="kpi-budget">€933</span>
@@ -647,7 +645,7 @@
                     <input type="range" id="leisure" min="0" max="500" value="150">
                 </div>
 
-                <!-- 3. Student Quick-Add Presets -->
+                <!-- Student Quick-Add Presets -->
                 <div class="preset-container">
                     <div class="preset-title">Student Quick Presets</div>
                     <div class="preset-buttons">
@@ -663,7 +661,7 @@
             <div class="card chart-container">
                 <h2 class="card-title" style="align-self: flex-start; margin-bottom: 1rem;">Expense Breakdown</h2>
                 
-                <!-- 1. Budget Utilization Progress Bar -->
+                <!-- Budget Utilization Progress Bar -->
                 <div class="progress-box">
                     <div class="progress-header">
                         <span>Budget Consumed</span>
@@ -945,7 +943,7 @@
                 warningEl.style.display = "none";
             }
 
-            // 1. Update Budget Progress Bar
+            // Update Budget Progress Bar
             const usedPercentage = budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0;
             const progressBar = document.getElementById('progress-bar');
             const progressStatus = document.getElementById('progress-status');
@@ -964,7 +962,7 @@
             // Donut Center Text shows TOTAL ALLOCATED EXPENSES
             centerAmount.text(`€${totalExpenses}`);
 
-            // 1. Prepare Chart Data (EXPENSES ONLY - Excludes Surplus)
+            // Prepare Chart Data (EXPENSES ONLY - Excludes Surplus)
             let data = [
                 { category: "Groceries", value: groceries },
                 { category: "Campus Meals", value: meals },
@@ -1010,7 +1008,7 @@
                     tooltip.style("opacity", 0);
                 });
 
-            // 2. Smooth D3 Transition Fix
+            // Smooth D3 Transition Fix
             paths.merge(newPaths)
                 .transition().duration(400)
                 .attrTween("d", function(d) {
@@ -1066,9 +1064,7 @@
             });
         }
 
-        // ==========================================
-        // 4. TRANSACTION & LOG MANAGER LOGIC
-        // ==========================================
+        // TRANSACTION & LOG MANAGER LOGIC
         function loadTransactions() {
             const saved = localStorage.getItem(TRANSACTIONS_KEY);
             if (saved) {
@@ -1152,63 +1148,61 @@
             transactions.splice(index, 1);
             saveTransactions();
         }
-// Export Budget & Transactions to a JSON file
-function exportData() {
-    const budgetData = localStorage.getItem(STORAGE_KEY);
-    const transactionsData = localStorage.getItem(TRANSACTIONS_KEY);
 
-    const exportObj = {
-        version: "1.0",
-        exportedAt: new Date().toISOString(),
-        budget: budgetData ? JSON.parse(budgetData) : defaultValues,
-        transactions: transactionsData ? JSON.parse(transactionsData) : []
-    };
+        // Export Budget & Transactions to a JSON file
+        function exportData() {
+            const budgetData = localStorage.getItem(STORAGE_KEY);
+            const transactionsData = localStorage.getItem(TRANSACTIONS_KEY);
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `lappeenranta_budget_backup_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-}
+            const exportObj = {
+                version: "1.0",
+                exportedAt: new Date().toISOString(),
+                budget: budgetData ? JSON.parse(budgetData) : defaultValues,
+                transactions: transactionsData ? JSON.parse(transactionsData) : []
+            };
 
-// Import Budget & Transactions from a JSON file
-function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedObj = JSON.parse(e.target.result);
-
-            // Restore budget values if present
-            if (importedObj.budget) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(importedObj.budget));
-            }
-            
-            // Restore transactions if present
-            if (importedObj.transactions) {
-                localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(importedObj.transactions));
-            }
-
-            // Reload UI state with newly imported data
-            loadFromStorage();
-            loadTransactions();
-            updateChart();
-
-            alert("Budget data imported successfully!");
-        } catch (err) {
-            alert("Failed to import: Please ensure you selected a valid budget JSON file.");
-            console.error("Import error:", err);
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `lappeenranta_budget_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
-    };
-    reader.readAsText(file);
-    
-    // Reset file input value so the same file can be re-selected if needed
-    event.target.value = '';
-}
+
+        // Import Budget & Transactions from a JSON file
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedObj = JSON.parse(e.target.result);
+
+                    if (importedObj.budget) {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(importedObj.budget));
+                    }
+                    
+                    if (importedObj.transactions) {
+                        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(importedObj.transactions));
+                    }
+
+                    loadFromStorage();
+                    loadTransactions();
+                    updateChart();
+
+                    alert("Budget data imported successfully!");
+                } catch (err) {
+                    alert("Failed to import: Please ensure you selected a valid budget JSON file.");
+                    console.error("Import error:", err);
+                }
+            };
+            reader.readAsText(file);
+            
+            event.target.value = '';
+        }
+
         // Initialize App
         initTheme();
         loadFromStorage();

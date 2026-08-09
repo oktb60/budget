@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lappeenranta Student Budget & Tracker</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --hero-bg: #f1f5f9;
+            --hero-border: #cbd5e1;
+            
+            /* Category Colors */
+            --color-groceries: #10b981;
+            --color-meals: #3b82f6;
+            --color-transport: #f59e0b;
+            --color-fees: #8b5cf6;
+            --color-leisure: #ec4899;
+            --color-income: #10b981;
+            --color-deficit: #ef4444;
+        }
+
+        body.dark-theme {
+            --bg-color: #0b0e14;
+            --card-bg: #151921;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #262d3d;
+            --hero-bg: #1e2430;
+            --hero-border: #2e3648;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem 1rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Header */
+        .top-header-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: -0.5rem;
+        }
+
+        .btn-theme {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-theme:hover {
+            background: var(--hero-bg);
+        }
+
+        /* Top Summary KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .kpi-card.surplus .kpi-value {
+            color: #059669;
+        }
+
+        body.dark-theme .kpi-card.surplus .kpi-value {
+            color: #10b981;
+        }
+
+        .kpi-card.deficit {
+            border-color: #fca5a5;
+            background-color: #fef2f2;
+        }
+
+        body.dark-theme .kpi-card.deficit {
+            border-color: #7f1d1d;
+            background-color: #2c0b0e;
+        }
+
+        .kpi-card.deficit .kpi-value {
+            color: var(--color-deficit);
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .btn-reset {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-reset:hover {
+            background: var(--hero-bg);
+            color: var(--text-main);
+        }
+
+        /* Controls */
+        .budget-hero {
+            background: var(--hero-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.25rem;
+            border: 1px solid var(--hero-border);
+        }
+
+        .control-group {
+            margin-bottom: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .val-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .num-input, .text-input, .select-input {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            background: var(--card-bg);
+            transition: all 0.15s ease;
+        }
+
+        .num-input {
+            width: 76px;
+            text-align: right;
+        }
+
+        .num-input:focus, .text-input:focus, .select-input:focus {
+            outline: none;
+            border-color: var(--color-meals);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            outline: none;
+            margin: 4px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid var(--text-muted);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: transform 0.1s ease, border-color 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            border-color: var(--text-main);
+        }
+
+        /* Student Presets */
+        .preset-container {
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .preset-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .btn-preset {
+            background: var(--hero-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-preset:hover {
+            border-color: var(--color-meals);
+            color: var(--color-meals);
+        }
+
+        /* Budget Utilization Bar */
+        .progress-box {
+            width: 100%;
+            background: var(--hero-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--color-meals);
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* Chart Area */
+        .chart-container {
+            align-items: center;
+            position: relative;
+        }
+
+        #chart {
+            width: 100%;
+            max-width: 260px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .center-title {
+            fill: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .center-amount {
+            fill: var(--text-main);
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        #warning {
+            width: 100%;
+            background: #fef2f2;
+            color: var(--color-deficit);
+            border: 1px solid #fecaca;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        body.dark-theme #warning {
+            background: #2c0b0e;
+            border-color: #7f1d1d;
+        }
+
+        .legend-grid {
+            width: 100%;
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.6rem 1rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .legend-label-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .legend-value {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 10;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Activity / Transaction Log Section */
+        .log-section {
+            grid-column: 1 / -1;
+        }
+
+        .log-form {
+            display: grid;
+            grid-template-columns: 120px 1fr 140px 110px 100px;
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .log-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .btn-add {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 8px 14px;
+            transition: background 0.15s ease;
+        }
+
+        .btn-add:hover {
+            background: #1d4ed8;
+        }
+
+        .log-table-container {
+            overflow-x: auto;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            text-align: left;
+        }
+
+        .log-table th {
+            padding: 10px;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+        }
+
+        .log-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-expense {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .badge-income {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .btn-del {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .btn-del:hover {
+            color: var(--color-deficit);
+        }
+
+        .empty-log {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <!-- Top Theme Switcher -->
+        <div class="top-header-actions">
+            <button class="btn-theme" id="theme-toggle" title="Toggle Dark/Light Mode">🌙 Dark Mode</button>
+        </div>
+
+        <!-- Top KPI Bar -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Total Monthly Budget</span>
+                <span class="kpi-value" id="kpi-budget">€933</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Allocated Expenses</span>
+                <span class="kpi-value" id="kpi-expenses">€474</span>
+            </div>
+            <div class="kpi-card surplus" id="kpi-surplus-card">
+                <span class="kpi-label" id="kpi-surplus-label">Remaining Surplus</span>
+                <span class="kpi-value" id="kpi-surplus">€459</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            
+            <!-- Controls Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Budget Controls</h2>
+                    <button class="btn-reset" id="reset-btn" title="Reset all inputs to default values">Reset Defaults</button>
+                </div>
+                
+                <!-- Total Budget Hero Box -->
+                <div class="budget-hero">
+                    <div class="control-group" style="margin-bottom:0;">
+                        <label class="control-label" for="budget">
+                            <span class="label-left" style="font-size: 1rem;">Total Monthly Budget</span> 
+                            <span class="val-container">€<input type="number" id="budget-num" min="500" max="2000" value="933" class="num-input"></span>
+                        </label>
+                        <input type="range" id="budget" min="500" max="2000" value="933">
+                    </div>
+                </div>
+
+                <!-- Individual Expenses -->
+                <div class="control-group">
+                    <label class="control-label" for="groceries">
+                        <span class="label-left">
+                            <span class="color-dot" style="background-color: var(--color-groceries);"></span> Groceries
+                        </span>
+                        <span class="val-container">€<input type="number" id="groceries-num" min="0" max="1000" value="200" class="num-input"></span>
+                    </label>
+                    <input type="range" id="groceries" min="0" max="600" value="200">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="meals">
+                        <span class="label-left">
+                            <span class="color-dot" style="background-color: var(--color-meals);"></span> Campus Meals
+                        </span>
+                        <span class="val-container">€<input type="number" id="meals-num" min="0" max="1000" value="65" class="num-input"></span>
+                    </label>
+                    <input type="range" id="meals" min="0" max="250" value="65">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="transport">
+                        <span class="label-left">
+                            <span class="color-dot" style="background-color: var(--color-transport);"></span> Transport
+                        </span>
+                        <span class="val-container">€<input type="number" id="transport-num" min="0" max="1000" value="47" class="num-input"></span>
+                    </label>
+                    <input type="range" id="transport" min="0" max="200" value="47">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="fees">
+                        <span class="label-left">
+                            <span class="color-dot" style="background-color: var(--color-fees);"></span> Fees & Health
+                        </span>
+                        <span class="val-container">€<input type="number" id="fees-num" min="0" max="1000" value="12" class="num-input"></span>
+                    </label>
+                    <input type="range" id="fees" min="0" max="150" value="12">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="leisure">
+                        <span class="label-left">
+                            <span class="color-dot" style="background-color: var(--color-leisure);"></span> Leisure & Other
+                        </span>
+                        <span class="val-container">€<input type="number" id="leisure-num" min="0" max="1000" value="150" class="num-input"></span>
+                    </label>
+                    <input type="range" id="leisure" min="0" max="500" value="150">
+                </div>
+
+                <!-- 3. Student Quick-Add Presets -->
+                <div class="preset-container">
+                    <div class="preset-title">Student Quick Presets</div>
+                    <div class="preset-buttons">
+                        <button type="button" class="btn-preset" onclick="addPreset('leisure', 20)">+ Sitsit Ticket (€20)</button>
+                        <button type="button" class="btn-preset" onclick="addPreset('leisure', 40)">+ Student Overalls (€40)</button>
+                        <button type="button" class="btn-preset" onclick="addPreset('groceries', 35)">+ S-Market Stock Up (€35)</button>
+                        <button type="button" class="btn-preset" onclick="addPreset('fees', 37)">+ YTHS Semester Fee (€37)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Card -->
+            <div class="card chart-container">
+                <h2 class="card-title" style="align-self: flex-start; margin-bottom: 1rem;">Expense Breakdown</h2>
+                
+                <!-- 1. Budget Utilization Progress Bar -->
+                <div class="progress-box">
+                    <div class="progress-header">
+                        <span>Budget Consumed</span>
+                        <span id="progress-status">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-bar"></div>
+                    </div>
+                </div>
+
+                <div id="warning"></div>
+                <div id="chart"></div>
+                
+                <!-- Dynamic Legend -->
+                <div class="legend-grid" id="legend"></div>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+
+            <!-- Spending & Earnings Activity Log -->
+            <div class="card log-section">
+                <div class="card-header">
+                    <h2 class="card-title">Transaction & Activity Log</h2>
+                </div>
+
+                <!-- Log Entry Form -->
+                <form class="log-form" id="log-form">
+                    <select class="select-input" id="log-type">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income / Grant</option>
+                    </select>
+                    <input type="text" class="text-input" id="log-desc" placeholder="e.g. Prisma Groceries, Kela, Sitsit" required>
+                    <select class="select-input" id="log-category">
+                        <option value="Groceries">Groceries</option>
+                        <option value="Campus Meals">Campus Meals</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Fees & Health">Fees & Health</option>
+                        <option value="Leisure & Other">Leisure & Other</option>
+                        <option value="Income">Income/Allowance</option>
+                    </select>
+                    <input type="number" class="num-input" id="log-amount" style="width: 100%; text-align: left;" placeholder="€ Amount" step="0.01" min="0.01" required>
+                    <button type="submit" class="btn-add">+ Log</button>
+                </form>
+
+                <!-- Transactions Table -->
+                <div class="log-table-container">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-table-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                    <div id="empty-log-msg" class="empty-log">No transactions logged yet. Add your first spending or income above!</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'lappeenranta_budget_data';
+        const THEME_KEY = 'lappeenranta_theme_preference';
+        const TRANSACTIONS_KEY = 'lappeenranta_transactions_data';
+        const keys = ['budget', 'groceries', 'meals', 'transport', 'fees', 'leisure'];
+
+        const defaultValues = {
+            budget: 933,
+            groceries: 200,
+            meals: 65,
+            transport: 47,
+            fees: 12,
+            leisure: 150
+        };
+
+        const defaultMaxes = {
+            budget: 2000,
+            groceries: 600,
+            meals: 250,
+            transport: 200,
+            fees: 150,
+            leisure: 500
+        };
+
+        let transactions = [];
+
+        // D3 Chart Dimensions
+        const width = 260;
+        const height = 260;
+        const margin = 10;
+        const radius = Math.min(width, height) / 2 - margin;
+        const innerRadius = radius * 0.6;
+
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .attr("preserveAspectRatio", "xMidYMid meet")
+            .style("width", "100%")
+            .style("height", "auto")
+            .append("g")
+            .attr("transform", `translate(${width / 2},${height / 2})`);
+
+        // Center Labels inside Donut Chart
+        const centerGroup = svg.append("g").attr("class", "center-group");
+        
+        centerGroup.append("text")
+            .attr("class", "center-title")
+            .attr("text-anchor", "middle")
+            .attr("dy", "-0.6em")
+            .text("TOTAL SPENT");
+
+        const centerAmount = centerGroup.append("text")
+            .attr("class", "center-amount")
+            .attr("text-anchor", "middle")
+            .attr("dy", "0.8em");
+
+        const colorMap = {
+            "Groceries": "#10b981",
+            "Campus Meals": "#3b82f6",
+            "Transport": "#f59e0b",
+            "Fees & Health": "#8b5cf6",
+            "Leisure & Other": "#ec4899"
+        };
+
+        const pie = d3.pie().value(d => d.value).sort(null);
+        const arc = d3.arc().innerRadius(innerRadius).outerRadius(radius);
+        const arcHover = d3.arc().innerRadius(innerRadius).outerRadius(radius + 6);
+        const tooltip = d3.select("#tooltip");
+
+        // Dark Theme Switcher Logic
+        const themeBtn = document.getElementById('theme-toggle');
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeBtn.textContent = '☀️ Light Mode';
+            }
+        }
+
+        themeBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            const isDark = document.body.classList.contains('dark-theme');
+            themeBtn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+        });
+
+        // Highlight input text on focus
+        document.querySelectorAll('.num-input').forEach(input => {
+            input.addEventListener('focus', (e) => e.target.select());
+        });
+
+        // Preset Button Helper Function
+        function addPreset(categoryKey, amount) {
+            const numInput = document.getElementById(`${categoryKey}-num`);
+            const slider = document.getElementById(categoryKey);
+            let currentVal = parseInt(numInput.value) || 0;
+            let newVal = currentVal + amount;
+
+            if (newVal > parseInt(slider.max)) slider.max = newVal;
+            numInput.value = newVal;
+            slider.value = newVal;
+
+            updateChart();
+            saveToStorage();
+        }
+
+        // Local Storage Helpers for Budget
+        function saveToStorage() {
+            const data = {};
+            keys.forEach(key => {
+                data[key] = parseInt(document.getElementById(`${key}-num`).value) || 0;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (!saved) return;
+
+            try {
+                const data = JSON.parse(saved);
+                keys.forEach(key => {
+                    if (data[key] !== undefined) {
+                        const slider = document.getElementById(key);
+                        const numInput = document.getElementById(`${key}-num`);
+                        
+                        if (data[key] > parseInt(slider.max)) {
+                            slider.max = data[key];
+                        }
+                        
+                        slider.value = data[key];
+                        numInput.value = data[key];
+                    }
+                });
+            } catch (e) {
+                console.error("Error reading saved budget data:", e);
+            }
+        }
+
+        function resetToDefaults() {
+            keys.forEach(key => {
+                const slider = document.getElementById(key);
+                const numInput = document.getElementById(`${key}-num`);
+                
+                slider.max = defaultMaxes[key];
+                slider.value = defaultValues[key];
+                numInput.value = defaultValues[key];
+            });
+            localStorage.removeItem(STORAGE_KEY);
+            updateChart();
+        }
+
+        // Two-way sync binding
+        keys.forEach(key => {
+            const slider = document.getElementById(key);
+            const numInput = document.getElementById(`${key}-num`);
+
+            slider.addEventListener('input', () => {
+                numInput.value = slider.value;
+                updateChart();
+                saveToStorage();
+            });
+
+            numInput.addEventListener('input', () => {
+                let val = parseInt(numInput.value);
+                if (isNaN(val)) val = 0;
+                
+                if (val > parseInt(slider.max)) {
+                    slider.max = val;
+                }
+                
+                slider.value = val;
+                updateChart();
+                saveToStorage();
+            });
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', resetToDefaults);
+
+        // Core Chart & KPI Rendering Function
+        function updateChart() {
+            const budget = parseInt(document.getElementById('budget-num').value) || 0;
+            const groceries = parseInt(document.getElementById('groceries-num').value) || 0;
+            const meals = parseInt(document.getElementById('meals-num').value) || 0;
+            const transport = parseInt(document.getElementById('transport-num').value) || 0;
+            const fees = parseInt(document.getElementById('fees-num').value) || 0;
+            const leisure = parseInt(document.getElementById('leisure-num').value) || 0;
+
+            const totalExpenses = groceries + meals + transport + fees + leisure;
+            const surplus = budget - totalExpenses;
+
+            // Update Top KPI Cards
+            document.getElementById('kpi-budget').textContent = `€${budget}`;
+            document.getElementById('kpi-expenses').textContent = `€${totalExpenses}`;
+
+            const surplusCard = document.getElementById('kpi-surplus-card');
+            const surplusLabel = document.getElementById('kpi-surplus-label');
+            const surplusVal = document.getElementById('kpi-surplus');
+            const warningEl = document.getElementById('warning');
+
+            if (surplus < 0) {
+                surplusCard.className = "kpi-card deficit";
+                surplusLabel.textContent = "Deficit";
+                surplusVal.textContent = `-€${Math.abs(surplus)}`;
+                warningEl.style.display = "block";
+                warningEl.textContent = `Warning: Over budget by €${Math.abs(surplus)}!`;
+            } else {
+                surplusCard.className = "kpi-card surplus";
+                surplusLabel.textContent = "Remaining Surplus";
+                surplusVal.textContent = `€${surplus}`;
+                warningEl.style.display = "none";
+            }
+
+            // 1. Update Budget Progress Bar
+            const usedPercentage = budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0;
+            const progressBar = document.getElementById('progress-bar');
+            const progressStatus = document.getElementById('progress-status');
+
+            progressStatus.textContent = `${usedPercentage}% (€${totalExpenses} / €${budget})`;
+            progressBar.style.width = `${Math.min(usedPercentage, 100)}%`;
+
+            if (usedPercentage > 100) {
+                progressBar.style.backgroundColor = "var(--color-deficit)";
+            } else if (usedPercentage > 85) {
+                progressBar.style.backgroundColor = "var(--color-transport)";
+            } else {
+                progressBar.style.backgroundColor = "var(--color-meals)";
+            }
+
+            // Donut Center Text shows TOTAL ALLOCATED EXPENSES
+            centerAmount.text(`€${totalExpenses}`);
+
+            // 1. Prepare Chart Data (EXPENSES ONLY - Excludes Surplus)
+            let data = [
+                { category: "Groceries", value: groceries },
+                { category: "Campus Meals", value: meals },
+                { category: "Transport", value: transport },
+                { category: "Fees & Health", value: fees },
+                { category: "Leisure & Other", value: leisure }
+            ];
+
+            // Filter out 0 value slices
+            data = data.filter(d => d.value > 0);
+            const pieData = pie(data);
+
+            // Render Donut Slices
+            const paths = svg.selectAll("path")
+                .data(pieData, d => d.data.category);
+
+            paths.exit().remove();
+
+            const newPaths = paths.enter()
+                .append("path")
+                .attr("fill", d => colorMap[d.data.category])
+                .attr("stroke", "var(--card-bg)")
+                .style("stroke-width", "2px")
+                .on("mouseover", function(event, d) {
+                    d3.select(this)
+                      .transition().duration(150)
+                      .attr("d", arcHover);
+
+                    const pct = totalExpenses > 0 ? ((d.data.value / totalExpenses) * 100).toFixed(1) : 0;
+                    tooltip.style("opacity", 1)
+                           .html(`<strong>${d.data.category}</strong><br>€${d.data.value} (${pct}% of spent)`);
+                })
+                .on("mousemove", function(event) {
+                    const [x, y] = d3.pointer(event, document.querySelector('.chart-container'));
+                    tooltip.style("left", (x + 15) + "px")
+                           .style("top", (y - 10) + "px");
+                })
+                .on("mouseleave", function() {
+                    d3.select(this)
+                      .transition().duration(150)
+                      .attr("d", arc);
+
+                    tooltip.style("opacity", 0);
+                });
+
+            // 2. Smooth D3 Transition Fix
+            paths.merge(newPaths)
+                .transition().duration(400)
+                .attrTween("d", function(d) {
+                    const interpolate = d3.interpolate(this._current || d, d);
+                    this._current = interpolate(1);
+                    return function(t) {
+                        return arc(interpolate(t));
+                    };
+                });
+
+            // Render Slice Labels
+            const labels = svg.selectAll(".slice-label")
+                .data(pieData, d => d.data.category);
+
+            labels.exit().remove();
+
+            const newLabels = labels.enter()
+                .append("text")
+                .attr("class", "slice-label")
+                .attr("text-anchor", "middle")
+                .attr("dy", "0.35em")
+                .style("fill", "#ffffff")
+                .style("font-size", "11px")
+                .style("font-weight", "700")
+                .style("pointer-events", "none");
+
+            labels.merge(newLabels)
+                .transition().duration(400)
+                .attr("transform", function(d) {
+                    return `translate(${arc.centroid(d)})`;
+                })
+                .text(d => {
+                    const pct = totalExpenses > 0 ? (d.data.value / totalExpenses) * 100 : 0;
+                    return pct >= 6 ? `${Math.round(pct)}%` : '';
+                });
+
+            // Render Legend
+            const legendEl = document.getElementById('legend');
+            legendEl.innerHTML = '';
+            
+            data.forEach(item => {
+                const pct = totalExpenses > 0 ? ((item.value / totalExpenses) * 100).toFixed(1) : 0;
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `
+                    <div class="legend-label-group">
+                        <span class="color-dot" style="background-color: ${colorMap[item.category]};"></span>
+                        <span>${item.category}</span>
+                    </div>
+                    <span class="legend-value">€${item.value} (${pct}%)</span>
+                `;
+                legendEl.appendChild(legendItem);
+            });
+        }
+
+        // ==========================================
+        // 4. TRANSACTION & LOG MANAGER LOGIC
+        // ==========================================
+        function loadTransactions() {
+            const saved = localStorage.getItem(TRANSACTIONS_KEY);
+            if (saved) {
+                try {
+                    transactions = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Error loading transactions:", e);
+                    transactions = [];
+                }
+            }
+            renderTransactions();
+        }
+
+        function saveTransactions() {
+            localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
+            renderTransactions();
+        }
+
+        function renderTransactions() {
+            const tbody = document.getElementById('log-table-body');
+            const emptyMsg = document.getElementById('empty-log-msg');
+            tbody.innerHTML = '';
+
+            if (transactions.length === 0) {
+                emptyMsg.style.display = 'block';
+                return;
+            }
+
+            emptyMsg.style.display = 'none';
+
+            transactions.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const badgeClass = item.type === 'income' ? 'badge-income' : 'badge-expense';
+                const amountPrefix = item.type === 'income' ? '+€' : '-€';
+
+                tr.innerHTML = `
+                    <td>${item.date}</td>
+                    <td><span class="badge ${badgeClass}">${item.type.toUpperCase()}</span></td>
+                    <td><strong>${escapeHtml(item.desc)}</strong></td>
+                    <td>${item.category}</td>
+                    <td style="font-weight:700;">${amountPrefix}${parseFloat(item.amount).toFixed(2)}</td>
+                    <td><button class="btn-del" onclick="deleteTransaction(${index})" title="Delete entry">&times;</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        document.getElementById('log-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const type = document.getElementById('log-type').value;
+            const desc = document.getElementById('log-desc').value.trim();
+            const category = document.getElementById('log-category').value;
+            const amount = parseFloat(document.getElementById('log-amount').value);
+
+            if (!desc || isNaN(amount) || amount <= 0) return;
+
+            const newEntry = {
+                date: new Date().toISOString().split('T')[0],
+                type,
+                desc,
+                category,
+                amount
+            };
+
+            transactions.unshift(newEntry);
+            saveTransactions();
+
+            // Reset form
+            document.getElementById('log-desc').value = '';
+            document.getElementById('log-amount').value = '';
+        });
+
+        function deleteTransaction(index) {
+            transactions.splice(index, 1);
+            saveTransactions();
+        }
+
+        // Initialize App
+        initTheme();
+        loadFromStorage();
+        loadTransactions();
+        updateChart();
+    </script>
+</body>
+</html>

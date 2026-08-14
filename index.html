@@ -203,7 +203,7 @@
             color: var(--text-main);
         }
 
-        /* Quick Add & Budget Setup */
+        /* Quick Add */
         .quick-add-hint {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -233,13 +233,6 @@
             color: var(--color-meals);
         }
 
-        .budget-form-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-top: auto;
-        }
-
         .num-input, .text-input, .select-input {
             padding: 6px 10px;
             border: 1px solid var(--border-color);
@@ -252,7 +245,7 @@
         }
 
         .num-input {
-            width: 100px;
+            width: 84px;
             text-align: right;
         }
 
@@ -260,22 +253,6 @@
             outline: none;
             border-color: var(--color-meals);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-
-        .btn-save-budget {
-            background: var(--color-meals);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 7px 14px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: opacity 0.15s ease;
-        }
-
-        .btn-save-budget:hover {
-            opacity: 0.9;
         }
 
         /* Budget Utilization Bar */
@@ -570,7 +547,7 @@
         <!-- Top KPI Bar -->
         <div class="kpi-grid">
             <div class="kpi-card">
-                <span class="kpi-label">Monthly Budget Goal</span>
+                <span class="kpi-label">Monthly Income</span>
                 <span class="kpi-value" id="kpi-budget">€0</span>
             </div>
             <div class="kpi-card">
@@ -584,18 +561,6 @@
         </div>
 
         <div class="main-grid">
-
-            <!-- Budget Setup Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Monthly Budget Goal</h2>
-                </div>
-                <p class="quick-add-hint">Set your planned target spending limit for the currently selected month.</p>
-                <div class="budget-form-group">
-                    <input type="number" class="num-input" id="budget-input" placeholder="€ Goal" step="1" min="0" style="width: 140px; text-align: left;" aria-label="Monthly Budget Goal Amount">
-                    <button type="button" class="btn-save-budget" onclick="saveBudgetGoal()">Save Budget</button>
-                </div>
-            </div>
 
             <!-- Quick Add Card -->
             <div class="card">
@@ -612,13 +577,13 @@
             </div>
 
             <!-- Chart Card -->
-            <div class="card chart-container" style="grid-column: 1 / -1;">
+            <div class="card chart-container">
                 <h2 class="card-title" style="align-self: flex-start; margin-bottom: 1rem;">Expense Breakdown</h2>
 
-                <!-- Budget Utilization Progress Bar -->
+                <!-- Income Utilization Progress Bar -->
                 <div class="progress-box">
                     <div class="progress-header">
-                        <span>Budget Used</span>
+                        <span>Income Used</span>
                         <span id="progress-status">0%</span>
                     </div>
                     <div class="progress-track">
@@ -639,7 +604,7 @@
                 <div class="card-header">
                     <h2 class="card-title">Monthly Trends</h2>
                     <div class="trend-legend">
-                        <span class="trend-legend-item"><span class="color-dot" style="background-color:#10b981;"></span> Budget Goal</span>
+                        <span class="trend-legend-item"><span class="color-dot" style="background-color:#10b981;"></span> Income</span>
                         <span class="trend-legend-item"><span class="color-dot" style="background-color:#3b82f6;"></span> Expenses</span>
                     </div>
                 </div>
@@ -692,8 +657,9 @@
     <script>
         const THEME_KEY = 'lappeenranta_theme_preference';
         const TRANSACTIONS_KEY = 'lappeenranta_transactions_data';
-        const BUDGETS_KEY = 'lappeenranta_budgets_data';
 
+        // Single source of truth for every category: which transaction type it's
+        // valid for, and the color used consistently across the donut chart & legend.
         const categoryOptions = [
             { value: 'Groceries', label: 'Groceries', type: 'expense', color: '#10b981' },
             { value: 'Campus Meals', label: 'Campus Meals', type: 'expense', color: '#3b82f6' },
@@ -703,12 +669,12 @@
             { value: 'Income', label: 'Income/Allowance', type: 'income', color: '#10b981' }
         ];
         const validCategoryValues = categoryOptions.map(c => c.value);
-        const TREND_COLORS = { budget: '#10b981', expense: '#3b82f6' };
+        const TREND_COLORS = { income: '#10b981', expense: '#3b82f6' };
 
         let transactions = [];
-        let budgets = {}; // Keyed by month string e.g. "2026-08": 800
         let currentMonthKey = getCurrentMonthKey();
 
+        // Helper: Local Date Format (YYYY-MM-DD) avoiding UTC offsets
         function getLocalDateString() {
             const today = new Date();
             const year = today.getFullYear();
@@ -739,6 +705,7 @@
             return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
         }
 
+        // Format currency helper
         function formatMoney(val) {
             return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
         }
@@ -788,6 +755,7 @@
         const arcHover = d3.arc().innerRadius(innerRadius).outerRadius(radius + 6);
         const tooltip = d3.select("#tooltip");
 
+        // Dark Theme Switcher Logic
         const themeBtn = document.getElementById('theme-toggle');
 
         function initTheme() {
@@ -805,10 +773,14 @@
             localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
         });
 
+        // Highlight input text on focus
         document.querySelectorAll('.num-input').forEach(input => {
             input.addEventListener('focus', (e) => e.target.select());
         });
 
+        // Repopulate the category dropdown to only show options valid for the
+        // currently selected transaction type, so a mismatched combo (e.g. an
+        // "Expense" logged against the "Income" category) can never be selected.
         function updateCategoryOptions() {
             const type = document.getElementById('log-type').value;
             const categorySelect = document.getElementById('log-category');
@@ -824,9 +796,9 @@
 
         document.getElementById('log-type').addEventListener('change', updateCategoryOptions);
 
+        // MONTH SELECTOR LOGIC
         function getAvailableMonths() {
             const set = new Set(transactions.map(t => getMonthKeyFromDate(t.date)));
-            Object.keys(budgets).forEach(m => set.add(m));
             set.add(getCurrentMonthKey());
             set.add(currentMonthKey);
             return Array.from(set).sort().reverse();
@@ -839,27 +811,12 @@
             sel.innerHTML = months.map(m => `<option value="${m}">${formatMonthLabel(m)}</option>`).join('');
             sel.value = months.includes(currentMonthKey) ? currentMonthKey : months[0];
             currentMonthKey = sel.value;
-
-            // Sync budget input field with active month's budget goal
-            document.getElementById('budget-input').value = budgets[currentMonthKey] !== undefined ? budgets[currentMonthKey] : '';
         }
 
         document.getElementById('month-selector').addEventListener('change', function() {
             currentMonthKey = this.value;
-            document.getElementById('budget-input').value = budgets[currentMonthKey] !== undefined ? budgets[currentMonthKey] : '';
             renderAll();
         });
-
-        function saveBudgetGoal() {
-            const val = parseFloat(document.getElementById('budget-input').value);
-            if (isNaN(val) || val < 0) {
-                delete budgets[currentMonthKey];
-            } else {
-                budgets[currentMonthKey] = val;
-            }
-            localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
-            renderAll();
-        }
 
         function renderAll() {
             renderTransactions();
@@ -867,21 +824,20 @@
             renderTrends();
         }
 
-        function loadStorage() {
-            const savedTx = localStorage.getItem(TRANSACTIONS_KEY);
-            if (savedTx) {
+        // TRANSACTION & LOG MANAGER LOGIC
+        function loadTransactions() {
+            const saved = localStorage.getItem(TRANSACTIONS_KEY);
+            if (saved) {
                 try {
-                    transactions = JSON.parse(savedTx);
+                    transactions = JSON.parse(saved);
+                    let backfilled = false;
+                    transactions.forEach(t => {
+                        if (!t.id) { t.id = generateId(); backfilled = true; }
+                    });
+                    if (backfilled) localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
                 } catch (e) {
+                    console.error("Error loading transactions:", e);
                     transactions = [];
-                }
-            }
-            const savedBudgets = localStorage.getItem(BUDGETS_KEY);
-            if (savedBudgets) {
-                try {
-                    budgets = JSON.parse(savedBudgets);
-                } catch (e) {
-                    budgets = {};
                 }
             }
         }
@@ -962,6 +918,7 @@
             renderAll();
         }
 
+        // Quick Add: logs a transaction directly, no manual form needed
         function quickLogTransaction(desc, category, amount) {
             const newEntry = {
                 id: generateId(),
@@ -979,12 +936,12 @@
             renderAll();
         }
 
+        // Export Transactions to a JSON file
         function exportData() {
             const exportObj = {
-                version: "2.1",
+                version: "2.0",
                 exportedAt: new Date().toISOString(),
-                transactions,
-                budgets
+                transactions
             };
 
             const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
@@ -998,6 +955,9 @@
             URL.revokeObjectURL(blobUrl);
         }
 
+        // Validate & clean a single imported transaction record. Returns null
+        // if the record is malformed or has values outside the app's known
+        // set (this is what protects against a crafted/malicious import file).
         function sanitizeTransaction(item) {
             if (!item || typeof item !== 'object') return null;
 
@@ -1017,6 +977,7 @@
             return { id, date, type, desc, category, amount };
         }
 
+        // Import Transactions from a JSON file
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1026,31 +987,40 @@
                 try {
                     const importedObj = JSON.parse(e.target.result);
 
-                    if (importedObj.transactions && Array.isArray(importedObj.transactions)) {
-                        transactions = importedObj.transactions.map(sanitizeTransaction).filter(t => t !== null);
-                        saveTransactions();
-                    }
-                    if (importedObj.budgets && typeof importedObj.budgets === 'object') {
-                        budgets = importedObj.budgets;
-                        localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
+                    if (!Array.isArray(importedObj.transactions)) {
+                        throw new Error("No transactions array found in file");
                     }
 
+                    const cleaned = importedObj.transactions.map(sanitizeTransaction).filter(t => t !== null);
+                    const skipped = importedObj.transactions.length - cleaned.length;
+
+                    transactions = cleaned;
+                    saveTransactions();
                     currentMonthKey = getCurrentMonthKey();
                     renderMonthSelector();
                     renderAll();
-                    alert("Budget data imported successfully!");
+
+                    alert(skipped > 0
+                        ? `Import complete. ${skipped} invalid transaction(s) were skipped.`
+                        : "Transactions imported successfully!");
                 } catch (err) {
-                    alert("Failed to import: Please ensure you selected a valid backup JSON file.");
+                    alert("Failed to import: Please ensure you selected a valid budget JSON file.");
+                    console.error("Import error:", err);
                 }
             };
             reader.readAsText(file);
+
             event.target.value = '';
         }
 
+        // Core Chart & KPI Rendering Function — computed entirely from the
+        // transaction log for the currently selected month.
         function updateChart() {
             const monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
 
-            const budgetGoal = budgets[currentMonthKey] !== undefined ? budgets[currentMonthKey] : 0;
+            const budget = Math.round(
+                monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) * 100
+            ) / 100;
 
             let data = categoryOptions.filter(c => c.type === 'expense').map(c => ({
                 category: c.value,
@@ -1064,9 +1034,9 @@
             }));
 
             const totalExpenses = Math.round(data.reduce((sum, d) => sum + d.value, 0) * 100) / 100;
-            const surplus = Math.round((budgetGoal - totalExpenses) * 100) / 100;
+            const surplus = Math.round((budget - totalExpenses) * 100) / 100;
 
-            document.getElementById('kpi-budget').textContent = `€${formatMoney(budgetGoal)}`;
+            document.getElementById('kpi-budget').textContent = `€${formatMoney(budget)}`;
             document.getElementById('kpi-expenses').textContent = `€${formatMoney(totalExpenses)}`;
 
             const surplusCard = document.getElementById('kpi-surplus-card');
@@ -1074,25 +1044,25 @@
             const surplusVal = document.getElementById('kpi-surplus');
             const warningEl = document.getElementById('warning');
 
-            if (budgetGoal > 0 && surplus < 0) {
+            if (surplus < 0) {
                 surplusCard.className = "kpi-card deficit";
-                surplusLabel.textContent = "Over Budget";
+                surplusLabel.textContent = "Deficit";
                 surplusVal.textContent = `-€${formatMoney(Math.abs(surplus))}`;
                 warningEl.style.display = "block";
                 warningEl.textContent = `Warning: Over budget by €${formatMoney(Math.abs(surplus))}!`;
             } else {
                 surplusCard.className = "kpi-card surplus";
-                surplusLabel.textContent = "Remaining Budget";
-                surplusVal.textContent = budgetGoal > 0 ? `€${formatMoney(surplus)}` : 'N/A (No Budget Set)';
+                surplusLabel.textContent = "Remaining Surplus";
+                surplusVal.textContent = `€${formatMoney(surplus)}`;
                 warningEl.style.display = "none";
             }
 
-            const usedPercentage = budgetGoal > 0 ? ((totalExpenses / budgetGoal) * 100).toFixed(1) : 0;
+            const usedPercentage = budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0;
             const progressBar = document.getElementById('progress-bar');
             const progressStatus = document.getElementById('progress-status');
 
-            progressStatus.textContent = budgetGoal > 0 ? `${usedPercentage}% (€${formatMoney(totalExpenses)} / €${formatMoney(budgetGoal)})` : 'Set a budget goal above';
-            progressBar.style.width = budgetGoal > 0 ? `${Math.min(usedPercentage, 100)}%` : '0%';
+            progressStatus.textContent = `${usedPercentage}% (€${formatMoney(totalExpenses)} / €${formatMoney(budget)})`;
+            progressBar.style.width = `${Math.min(usedPercentage, 100)}%`;
 
             if (usedPercentage > 100) {
                 progressBar.style.backgroundColor = "var(--color-deficit)";
@@ -1204,24 +1174,26 @@
             });
         }
 
+        // Monthly Trends: grouped bar chart comparing income vs expenses
+        // across every month present in the transaction log.
         function renderTrends() {
-            const allMonths = new Set(Object.keys(budgets));
-            transactions.forEach(t => allMonths.add(getMonthKeyFromDate(t.date)));
-            allMonths.add(getCurrentMonthKey());
-
-            const months = Array.from(allMonths).sort();
-            const chartData = months.map(mk => {
-                const monthExpenses = transactions
-                    .filter(t => getMonthKeyFromDate(t.date) === mk && t.type === 'expense')
-                    .reduce((sum, t) => sum + t.amount, 0);
-
-                return {
-                    month: mk,
-                    label: formatMonthShort(mk),
-                    budget: budgets[mk] !== undefined ? budgets[mk] : 0,
-                    expense: Math.round(monthExpenses * 100) / 100
-                };
+            const monthTotals = {};
+            transactions.forEach(t => {
+                const mk = getMonthKeyFromDate(t.date);
+                if (!monthTotals[mk]) monthTotals[mk] = { income: 0, expense: 0 };
+                monthTotals[mk][t.type] += t.amount;
             });
+            if (!monthTotals[getCurrentMonthKey()]) {
+                monthTotals[getCurrentMonthKey()] = { income: 0, expense: 0 };
+            }
+
+            const months = Object.keys(monthTotals).sort();
+            const chartData = months.map(mk => ({
+                month: mk,
+                label: formatMonthShort(mk),
+                income: Math.round(monthTotals[mk].income * 100) / 100,
+                expense: Math.round(monthTotals[mk].expense * 100) / 100
+            }));
 
             const trendsSvg = d3.select('#trends-chart');
             trendsSvg.selectAll('*').remove();
@@ -1239,11 +1211,11 @@
                 .paddingInner(0.35);
 
             const x1 = d3.scaleBand()
-                .domain(['budget', 'expense'])
+                .domain(['income', 'expense'])
                 .range([0, x0.bandwidth()])
                 .padding(0.12);
 
-            const maxVal = d3.max(chartData, d => Math.max(d.budget, d.expense)) || 10;
+            const maxVal = d3.max(chartData, d => Math.max(d.income, d.expense)) || 10;
             const y = d3.scaleLinear()
                 .domain([0, maxVal * 1.15])
                 .range([chartHeight, 0]);
@@ -1267,14 +1239,14 @@
                 .attr('class', 'month-group')
                 .attr('transform', d => `translate(${x0(d.label)},0)`);
 
-            ['budget', 'expense'].forEach(key => {
+            ['income', 'expense'].forEach(key => {
                 monthGroups.append('rect')
                     .attr('x', x1(key))
                     .attr('y', d => y(d[key]))
                     .attr('width', x1.bandwidth())
                     .attr('height', d => chartHeight - y(d[key]))
                     .attr('rx', 2)
-                    .attr('fill', key === 'budget' ? TREND_COLORS.budget : TREND_COLORS.expense)
+                    .attr('fill', key === 'income' ? TREND_COLORS.income : TREND_COLORS.expense)
                     .style('cursor', 'pointer')
                     .on('click', function(event, d) {
                         currentMonthKey = d.month;
@@ -1283,7 +1255,7 @@
                     })
                     .on('mouseover', function(event, d) {
                         tooltip.style('opacity', 1)
-                               .html(`<strong>${d.label}</strong><br>${key === 'budget' ? 'Budget Goal' : 'Expenses'}: €${formatMoney(d[key])}`);
+                               .html(`<strong>${d.label}</strong><br>${key === 'income' ? 'Income' : 'Expenses'}: €${formatMoney(d[key])}`);
                     })
                     .on('mousemove', function(event) {
                         const [x, y2] = d3.pointer(event, document.querySelector('.trends-card'));
@@ -1296,10 +1268,12 @@
             });
         }
 
+        // Initialize App
         initTheme();
         updateCategoryOptions();
-        loadStorage();
+        loadTransactions();
 
+        // Ensure currentMonthKey points to the latest month with data if available
         if (transactions.length > 0) {
             const availableMonths = Array.from(new Set(transactions.map(t => getMonthKeyFromDate(t.date)))).sort().reverse();
             currentMonthKey = availableMonths[0];

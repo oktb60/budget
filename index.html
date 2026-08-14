@@ -289,6 +289,26 @@
             border-color: var(--text-main);
         }
 
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid var(--text-muted);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: transform 0.1s ease, border-color 0.15s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.15);
+            border-color: var(--text-main);
+        }
+
+        input[type="range"]::-moz-range-track {
+            background: transparent;
+        }
+
         /* Student Presets */
         .preset-container {
             margin-top: 0.5rem;
@@ -696,14 +716,7 @@
                         <option value="income">Income / Grant</option>
                     </select>
                     <input type="text" class="text-input" id="log-desc" placeholder="e.g. Prisma Groceries, Kela, Sitsit" required aria-label="Transaction Description">
-                    <select class="select-input" id="log-category" aria-label="Transaction Category">
-                        <option value="Groceries">Groceries</option>
-                        <option value="Campus Meals">Campus Meals</option>
-                        <option value="Transport">Transport</option>
-                        <option value="Fees & Health">Fees & Health</option>
-                        <option value="Leisure & Other">Leisure & Other</option>
-                        <option value="Income">Income/Allowance</option>
-                    </select>
+                    <select class="select-input" id="log-category" aria-label="Transaction Category"></select>
                     <input type="number" class="num-input" id="log-amount" style="width: 100%; text-align: left;" placeholder="€ Amount" step="0.01" min="0.01" required aria-label="Transaction Amount">
                     <button type="submit" class="btn-add">+ Log</button>
                 </form>
@@ -756,14 +769,40 @@
             leisure: 500
         };
 
-        const categoryMap = {
-            'Groceries': 'groceries',
-            'Campus Meals': 'meals',
-            'Transport': 'transport',
-            'Fees & Health': 'fees',
-            'Leisure & Other': 'leisure',
-            'Income': 'budget'
-        };
+        // Each category is tagged with the transaction type it's valid for, and the
+        // budget/slider key it should sync with. This is the single source of truth
+        // for the log form's type <-> category relationship.
+        const categoryOptions = [
+            { value: 'Groceries', label: 'Groceries', type: 'expense', key: 'groceries' },
+            { value: 'Campus Meals', label: 'Campus Meals', type: 'expense', key: 'meals' },
+            { value: 'Transport', label: 'Transport', type: 'expense', key: 'transport' },
+            { value: 'Fees & Health', label: 'Fees & Health', type: 'expense', key: 'fees' },
+            { value: 'Leisure & Other', label: 'Leisure & Other', type: 'expense', key: 'leisure' },
+            { value: 'Income', label: 'Income/Allowance', type: 'income', key: 'budget' }
+        ];
+        const validCategoryValues = categoryOptions.map(c => c.value);
+
+        function categoryToKey(category) {
+            const match = categoryOptions.find(c => c.value === category);
+            return match ? match.key : null;
+        }
+
+        // Repopulate the category dropdown to only show options valid for the
+        // currently selected transaction type, so a mismatched combo (e.g. an
+        // "Expense" logged against the "Income" category) can never be selected.
+        function updateCategoryOptions() {
+            const type = document.getElementById('log-type').value;
+            const categorySelect = document.getElementById('log-category');
+            const previousValue = categorySelect.value;
+            const options = categoryOptions.filter(c => c.type === type);
+
+            categorySelect.innerHTML = options.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+
+            // Keep the previous selection if it's still valid for the new type
+            if (options.some(c => c.value === previousValue)) {
+                categorySelect.value = previousValue;
+            }
+        }
 
         let transactions = [];
 
@@ -1147,12 +1186,14 @@
                 const badgeClass = item.type === 'income' ? 'badge-income' : 'badge-expense';
                 const amountPrefix = item.type === 'income' ? '+€' : '-€';
                 const safeDesc = escapeHtml(item.desc);
+                const safeDate = escapeHtml(String(item.date));
+                const safeCategory = escapeHtml(String(item.category));
 
                 tr.innerHTML = `
-                    <td>${item.date}</td>
+                    <td>${safeDate}</td>
                     <td><span class="badge ${badgeClass}">${item.type.toUpperCase()}</span></td>
                     <td><strong>${safeDesc}</strong></td>
-                    <td>${item.category}</td>
+                    <td>${safeCategory}</td>
                     <td style="font-weight:700;">${amountPrefix}${parseFloat(item.amount).toFixed(2)}</td>
                     <td><button class="btn-del" aria-label="Delete entry: ${safeDesc}" onclick="deleteTransaction(${index})" title="Delete entry">&times;</button></td>
                 `;
@@ -1165,6 +1206,8 @@
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
             });
         }
+
+        document.getElementById('log-type').addEventListener('change', updateCategoryOptions);
 
         document.getElementById('log-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1188,7 +1231,7 @@
             saveTransactions();
 
             // Sync transaction with Budget Controls & Donut Chart
-            let targetKey = type === 'income' ? 'budget' : categoryMap[category];
+            let targetKey = categoryToKey(category);
             if (targetKey) {
                 const numInput = document.getElementById(`${targetKey}-num`);
                 const slider = document.getElementById(targetKey);
@@ -1212,7 +1255,7 @@
             const item = transactions[index];
             
             if (item) {
-                let targetKey = item.type === 'income' ? 'budget' : categoryMap[item.category];
+                let targetKey = categoryToKey(item.category);
                 if (targetKey) {
                     const numInput = document.getElementById(`${targetKey}-num`);
                     const slider = document.getElementById(targetKey);
@@ -1243,13 +1286,48 @@
                 transactions: transactionsData ? JSON.parse(transactionsData) : []
             };
 
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+            const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
+            const blobUrl = URL.createObjectURL(blob);
             const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("href", blobUrl);
             downloadAnchor.setAttribute("download", `lappeenranta_budget_backup_${getLocalDateString()}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
+            URL.revokeObjectURL(blobUrl);
+        }
+
+        // Validate & clean a single imported transaction record. Returns null
+        // if the record is malformed or has values outside the app's known
+        // set (this is what protects against a crafted/malicious import file).
+        function sanitizeTransaction(item) {
+            if (!item || typeof item !== 'object') return null;
+
+            const type = (item.type === 'income' || item.type === 'expense') ? item.type : null;
+            const category = validCategoryValues.includes(item.category) ? item.category : null;
+            const amount = Math.round(parseFloat(item.amount) * 100) / 100;
+            const date = (typeof item.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date))
+                ? item.date
+                : getLocalDateString();
+            const desc = typeof item.desc === 'string' ? item.desc.slice(0, 200) : '';
+
+            if (!type || !category || !isFinite(amount) || amount <= 0) return null;
+            // A type/category combo must actually match (e.g. "expense" can't be paired with "Income")
+            const categoryDef = categoryOptions.find(c => c.value === category);
+            if (!categoryDef || categoryDef.type !== type) return null;
+
+            return { date, type, desc, category, amount };
+        }
+
+        // Validate & clean the imported budget object, falling back to defaults
+        // for any missing, non-numeric, or out-of-range value.
+        function sanitizeBudget(budget) {
+            const sanitized = {};
+            keys.forEach(key => {
+                const val = budget && typeof budget === 'object' ? parseFloat(budget[key]) : NaN;
+                sanitized[key] = (isFinite(val) && val >= 0) ? Math.round(val * 100) / 100 : defaultValues[key];
+            });
+            return sanitized;
         }
 
         // Import Budget & Transactions from a JSON file
@@ -1263,11 +1341,25 @@
                     const importedObj = JSON.parse(e.target.result);
 
                     if (importedObj.budget) {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(importedObj.budget));
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeBudget(importedObj.budget)));
                     }
-                    
-                    if (importedObj.transactions) {
-                        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(importedObj.transactions));
+
+                    if (Array.isArray(importedObj.transactions)) {
+                        const cleaned = importedObj.transactions
+                            .map(sanitizeTransaction)
+                            .filter(t => t !== null);
+                        const skipped = importedObj.transactions.length - cleaned.length;
+
+                        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(cleaned));
+
+                        loadFromStorage();
+                        loadTransactions();
+                        updateChart();
+
+                        alert(skipped > 0
+                            ? `Import complete. ${skipped} invalid transaction(s) were skipped.`
+                            : "Budget data imported successfully!");
+                        return;
                     }
 
                     loadFromStorage();
@@ -1287,6 +1379,7 @@
 
         // Initialize App
         initTheme();
+        updateCategoryOptions();
         loadFromStorage();
         loadTransactions();
         updateChart();

@@ -1272,6 +1272,13 @@
         initTheme();
         updateCategoryOptions();
         loadTransactions();
+
+        // Ensure currentMonthKey points to the latest month with data if available
+        if (transactions.length > 0) {
+            const availableMonths = Array.from(new Set(transactions.map(t => getMonthKeyFromDate(t.date)))).sort().reverse();
+            currentMonthKey = availableMonths[0];
+        }
+
         renderMonthSelector();
         renderAll();
     </script>

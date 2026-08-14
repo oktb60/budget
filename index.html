@@ -17,7 +17,7 @@
             --border-color: #e2e8f0;
             --hero-bg: #f1f5f9;
             --hero-border: #cbd5e1;
-            
+
             /* Category Colors */
             --color-groceries: #10b981;
             --color-meals: #3b82f6;
@@ -62,8 +62,36 @@
         /* Header */
         .top-header-actions {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
             margin-bottom: -0.5rem;
+        }
+
+        .month-select-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .month-select-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        #month-selector {
+            min-width: 170px;
+            font-weight: 700;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .btn-theme {
@@ -175,67 +203,34 @@
             color: var(--text-main);
         }
 
-        .btn-reset {
-            background: transparent;
-            border: 1px solid var(--border-color);
+        /* Quick Add */
+        .quick-add-hint {
+            font-size: 0.85rem;
             color: var(--text-muted);
-            padding: 4px 10px;
-            border-radius: 6px;
+            margin: 0 0 1rem 0;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .btn-preset {
+            background: var(--hero-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 16px;
             font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.15s ease;
         }
 
-        .btn-reset:hover {
-            background: var(--hero-bg);
-            color: var(--text-main);
-        }
-
-        /* Controls */
-        .budget-hero {
-            background: var(--hero-bg);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.25rem;
-            border: 1px solid var(--hero-border);
-        }
-
-        .control-group {
-            margin-bottom: 1.1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .control-label {
-            font-weight: 600;
-            font-size: 0.92rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .label-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .color-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .val-container {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text-muted);
+        .btn-preset:hover {
+            border-color: var(--color-meals);
+            color: var(--color-meals);
         }
 
         .num-input, .text-input, .select-input {
@@ -258,93 +253,6 @@
             outline: none;
             border-color: var(--color-meals);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 6px;
-            background: var(--border-color);
-            border-radius: 3px;
-            outline: none;
-            margin: 4px 0;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--card-bg);
-            border: 2px solid var(--text-muted);
-            cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-            transition: transform 0.1s ease, border-color 0.15s ease;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-            border-color: var(--text-main);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--card-bg);
-            border: 2px solid var(--text-muted);
-            cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-            transition: transform 0.1s ease, border-color 0.15s ease;
-        }
-
-        input[type="range"]::-moz-range-thumb:hover {
-            transform: scale(1.15);
-            border-color: var(--text-main);
-        }
-
-        input[type="range"]::-moz-range-track {
-            background: transparent;
-        }
-
-        /* Student Presets */
-        .preset-container {
-            margin-top: 0.5rem;
-            padding-top: 1rem;
-            border-top: 1px dashed var(--border-color);
-        }
-
-        .preset-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 0.6rem;
-        }
-
-        .preset-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .btn-preset {
-            background: var(--hero-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 4px 10px;
-            border-radius: 16px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .btn-preset:hover {
-            border-color: var(--color-meals);
-            color: var(--color-meals);
         }
 
         /* Budget Utilization Bar */
@@ -456,6 +364,14 @@
             color: var(--text-muted);
         }
 
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
         .tooltip {
             position: absolute;
             background: #1e293b;
@@ -468,6 +384,47 @@
             transition: opacity 0.15s ease;
             z-index: 10;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Monthly Trends */
+        .trends-card {
+            grid-column: 1 / -1;
+        }
+
+        .trend-legend {
+            display: flex;
+            gap: 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .trend-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .trend-hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin: 0 0 0.75rem 0;
+        }
+
+        #trends-chart {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .axis text {
+            fill: var(--text-muted);
+            font-size: 10px;
+        }
+
+        .axis path,
+        .axis line {
+            stroke: var(--border-color);
         }
 
         /* Activity / Transaction Log Section */
@@ -572,122 +529,61 @@
 <body>
 
     <div class="dashboard-container">
-        
-        <!-- Top Action Buttons -->
-        <div class="top-header-actions" style="gap: 8px;">
-            <button class="btn-theme" onclick="exportData()" title="Download budget & transactions backup">📥 Export</button>
-            <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore budget & transactions from JSON file">📤 Import</button>
-            <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
-            <button class="btn-theme" id="theme-toggle" title="Toggle Dark/Light Mode">🌙 Dark Mode</button>
+
+        <!-- Top Bar: Month Selector + Actions -->
+        <div class="top-header-actions">
+            <div class="month-select-group">
+                <label for="month-selector" class="month-select-label">Viewing</label>
+                <select id="month-selector" class="select-input" aria-label="Select month to view"></select>
+            </div>
+            <div class="header-buttons">
+                <button class="btn-theme" onclick="exportData()" title="Download all transactions as a backup file">📥 Export</button>
+                <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore transactions from a JSON file">📤 Import</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+                <button class="btn-theme" id="theme-toggle" title="Toggle Dark/Light Mode">🌙 Dark Mode</button>
+            </div>
         </div>
 
         <!-- Top KPI Bar -->
         <div class="kpi-grid">
             <div class="kpi-card">
-                <span class="kpi-label">Total Monthly Budget</span>
-                <span class="kpi-value" id="kpi-budget">€933</span>
+                <span class="kpi-label">Monthly Income</span>
+                <span class="kpi-value" id="kpi-budget">€0</span>
             </div>
             <div class="kpi-card">
-                <span class="kpi-label">Allocated Expenses</span>
-                <span class="kpi-value" id="kpi-expenses">€474</span>
+                <span class="kpi-label">Expenses Logged</span>
+                <span class="kpi-value" id="kpi-expenses">€0</span>
             </div>
             <div class="kpi-card surplus" id="kpi-surplus-card">
                 <span class="kpi-label" id="kpi-surplus-label">Remaining Surplus</span>
-                <span class="kpi-value" id="kpi-surplus">€459</span>
+                <span class="kpi-value" id="kpi-surplus">€0</span>
             </div>
         </div>
 
         <div class="main-grid">
-            
-            <!-- Controls Card -->
+
+            <!-- Quick Add Card -->
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Budget Controls</h2>
-                    <button class="btn-reset" id="reset-btn" title="Reset all inputs to default values">Reset Defaults</button>
+                    <h2 class="card-title">Quick Add</h2>
                 </div>
-                
-                <!-- Total Budget Hero Box -->
-                <div class="budget-hero">
-                    <div class="control-group" style="margin-bottom:0;">
-                        <label class="control-label" for="budget-num">
-                            <span class="label-left" style="font-size: 1rem;">Total Monthly Budget</span> 
-                            <span class="val-container">€<input type="number" id="budget-num" min="0" max="2000" step="any" value="933" class="num-input"></span>
-                        </label>
-                        <input type="range" id="budget" min="0" max="2000" value="933">
-                    </div>
-                </div>
-
-                <!-- Individual Expenses -->
-                <div class="control-group">
-                    <label class="control-label" for="groceries-num">
-                        <span class="label-left">
-                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-groceries);"></span> Groceries
-                        </span>
-                        <span class="val-container">€<input type="number" id="groceries-num" min="0" max="1000" step="any" value="200" class="num-input"></span>
-                    </label>
-                    <input type="range" id="groceries" min="0" max="600" value="200">
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="meals-num">
-                        <span class="label-left">
-                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-meals);"></span> Campus Meals
-                        </span>
-                        <span class="val-container">€<input type="number" id="meals-num" min="0" max="1000" step="any" value="65" class="num-input"></span>
-                    </label>
-                    <input type="range" id="meals" min="0" max="250" value="65">
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="transport-num">
-                        <span class="label-left">
-                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-transport);"></span> Transport
-                        </span>
-                        <span class="val-container">€<input type="number" id="transport-num" min="0" max="1000" step="any" value="47" class="num-input"></span>
-                    </label>
-                    <input type="range" id="transport" min="0" max="200" value="47">
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="fees-num">
-                        <span class="label-left">
-                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-fees);"></span> Fees & Health
-                        </span>
-                        <span class="val-container">€<input type="number" id="fees-num" min="0" max="1000" step="any" value="12" class="num-input"></span>
-                    </label>
-                    <input type="range" id="fees" min="0" max="150" value="12">
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="leisure-num">
-                        <span class="label-left">
-                            <span class="color-dot" aria-hidden="true" style="background-color: var(--color-leisure);"></span> Leisure & Other
-                        </span>
-                        <span class="val-container">€<input type="number" id="leisure-num" min="0" max="1000" step="any" value="150" class="num-input"></span>
-                    </label>
-                    <input type="range" id="leisure" min="0" max="500" value="150">
-                </div>
-
-                <!-- Student Quick Presets -->
-                <div class="preset-container">
-                    <div class="preset-title">Student Quick Presets</div>
-                    <div class="preset-buttons">
-                        <button type="button" class="btn-preset" onclick="addPreset('leisure', 20)">+ Sitsit Ticket (€20)</button>
-                        <button type="button" class="btn-preset" onclick="addPreset('leisure', 40)">+ Student Overalls (€40)</button>
-                        <button type="button" class="btn-preset" onclick="addPreset('groceries', 35)">+ S-Market Stock Up (€35)</button>
-                        <button type="button" class="btn-preset" onclick="addPreset('fees', 37)">+ YTHS Semester Fee (€37)</button>
-                    </div>
+                <p class="quick-add-hint">Tap a common expense to log it instantly, or use the full form below for anything else.</p>
+                <div class="preset-buttons">
+                    <button type="button" class="btn-preset" onclick="quickLogTransaction('Sitsit Ticket', 'Leisure & Other', 20)">+ Sitsit Ticket (€20)</button>
+                    <button type="button" class="btn-preset" onclick="quickLogTransaction('Student Overalls', 'Leisure & Other', 40)">+ Student Overalls (€40)</button>
+                    <button type="button" class="btn-preset" onclick="quickLogTransaction('S-Market Stock Up', 'Groceries', 35)">+ S-Market Stock Up (€35)</button>
+                    <button type="button" class="btn-preset" onclick="quickLogTransaction('YTHS Semester Fee', 'Fees & Health', 37)">+ YTHS Semester Fee (€37)</button>
                 </div>
             </div>
 
             <!-- Chart Card -->
             <div class="card chart-container">
                 <h2 class="card-title" style="align-self: flex-start; margin-bottom: 1rem;">Expense Breakdown</h2>
-                
-                <!-- Budget Utilization Progress Bar -->
+
+                <!-- Income Utilization Progress Bar -->
                 <div class="progress-box">
                     <div class="progress-header">
-                        <span>Budget Consumed</span>
+                        <span>Income Used</span>
                         <span id="progress-status">0%</span>
                     </div>
                     <div class="progress-track">
@@ -697,10 +593,23 @@
 
                 <div id="warning"></div>
                 <div id="chart"></div>
-                
+
                 <!-- Dynamic Legend -->
                 <div class="legend-grid" id="legend"></div>
                 <div class="tooltip" id="tooltip"></div>
+            </div>
+
+            <!-- Monthly Trends -->
+            <div class="card trends-card">
+                <div class="card-header">
+                    <h2 class="card-title">Monthly Trends</h2>
+                    <div class="trend-legend">
+                        <span class="trend-legend-item"><span class="color-dot" style="background-color:#10b981;"></span> Income</span>
+                        <span class="trend-legend-item"><span class="color-dot" style="background-color:#3b82f6;"></span> Expenses</span>
+                    </div>
+                </div>
+                <p class="trend-hint">Click a bar to jump to that month.</p>
+                <svg id="trends-chart" viewBox="0 0 600 260" preserveAspectRatio="xMidYMid meet"></svg>
             </div>
 
             <!-- Spending & Earnings Activity Log -->
@@ -746,65 +655,24 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'lappeenranta_budget_data';
         const THEME_KEY = 'lappeenranta_theme_preference';
         const TRANSACTIONS_KEY = 'lappeenranta_transactions_data';
-        const keys = ['budget', 'groceries', 'meals', 'transport', 'fees', 'leisure'];
 
-        const defaultValues = {
-            budget: 933,
-            groceries: 200,
-            meals: 65,
-            transport: 47,
-            fees: 12,
-            leisure: 150
-        };
-
-        const defaultMaxes = {
-            budget: 2000,
-            groceries: 600,
-            meals: 250,
-            transport: 200,
-            fees: 150,
-            leisure: 500
-        };
-
-        // Each category is tagged with the transaction type it's valid for, and the
-        // budget/slider key it should sync with. This is the single source of truth
-        // for the log form's type <-> category relationship.
+        // Single source of truth for every category: which transaction type it's
+        // valid for, and the color used consistently across the donut chart & legend.
         const categoryOptions = [
-            { value: 'Groceries', label: 'Groceries', type: 'expense', key: 'groceries' },
-            { value: 'Campus Meals', label: 'Campus Meals', type: 'expense', key: 'meals' },
-            { value: 'Transport', label: 'Transport', type: 'expense', key: 'transport' },
-            { value: 'Fees & Health', label: 'Fees & Health', type: 'expense', key: 'fees' },
-            { value: 'Leisure & Other', label: 'Leisure & Other', type: 'expense', key: 'leisure' },
-            { value: 'Income', label: 'Income/Allowance', type: 'income', key: 'budget' }
+            { value: 'Groceries', label: 'Groceries', type: 'expense', color: '#10b981' },
+            { value: 'Campus Meals', label: 'Campus Meals', type: 'expense', color: '#3b82f6' },
+            { value: 'Transport', label: 'Transport', type: 'expense', color: '#f59e0b' },
+            { value: 'Fees & Health', label: 'Fees & Health', type: 'expense', color: '#8b5cf6' },
+            { value: 'Leisure & Other', label: 'Leisure & Other', type: 'expense', color: '#ec4899' },
+            { value: 'Income', label: 'Income/Allowance', type: 'income', color: '#10b981' }
         ];
         const validCategoryValues = categoryOptions.map(c => c.value);
-
-        function categoryToKey(category) {
-            const match = categoryOptions.find(c => c.value === category);
-            return match ? match.key : null;
-        }
-
-        // Repopulate the category dropdown to only show options valid for the
-        // currently selected transaction type, so a mismatched combo (e.g. an
-        // "Expense" logged against the "Income" category) can never be selected.
-        function updateCategoryOptions() {
-            const type = document.getElementById('log-type').value;
-            const categorySelect = document.getElementById('log-category');
-            const previousValue = categorySelect.value;
-            const options = categoryOptions.filter(c => c.type === type);
-
-            categorySelect.innerHTML = options.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
-
-            // Keep the previous selection if it's still valid for the new type
-            if (options.some(c => c.value === previousValue)) {
-                categorySelect.value = previousValue;
-            }
-        }
+        const TREND_COLORS = { income: '#10b981', expense: '#3b82f6' };
 
         let transactions = [];
+        let currentMonthKey = getCurrentMonthKey();
 
         // Helper: Local Date Format (YYYY-MM-DD) avoiding UTC offsets
         function getLocalDateString() {
@@ -815,12 +683,40 @@
             return `${year}-${month}-${day}`;
         }
 
+        function getCurrentMonthKey() {
+            return getLocalDateString().slice(0, 7);
+        }
+
+        function getMonthKeyFromDate(dateStr) {
+            return (typeof dateStr === 'string' && /^\d{4}-\d{2}/.test(dateStr)) ? dateStr.slice(0, 7) : getCurrentMonthKey();
+        }
+
+        function formatMonthLabel(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+
+        function formatMonthShort(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short' }) + " '" + String(y).slice(2);
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        }
+
         // Format currency helper
         function formatMoney(val) {
             return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
         }
 
-        // D3 Chart Dimensions
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        // D3 Donut Chart Dimensions
         const width = 260;
         const height = 260;
         const margin = 10;
@@ -836,15 +732,13 @@
             .append("g")
             .attr("transform", `translate(${width / 2},${height / 2})`);
 
-        // Empty state background ring
         const emptyRing = svg.append("path")
             .attr("class", "empty-ring")
             .attr("fill", "var(--border-color)")
             .style("display", "none");
 
-        // Center Labels inside Donut Chart
         const centerGroup = svg.append("g").attr("class", "center-group");
-        
+
         centerGroup.append("text")
             .attr("class", "center-title")
             .attr("text-anchor", "middle")
@@ -855,14 +749,6 @@
             .attr("class", "center-amount")
             .attr("text-anchor", "middle")
             .attr("dy", "0.8em");
-
-        const colorMap = {
-            "Groceries": "#10b981",
-            "Campus Meals": "#3b82f6",
-            "Transport": "#f59e0b",
-            "Fees & Health": "#8b5cf6",
-            "Leisure & Other": "#ec4899"
-        };
 
         const pie = d3.pie().value(d => d.value).sort(null);
         const arc = d3.arc().innerRadius(innerRadius).outerRadius(radius);
@@ -892,262 +778,50 @@
             input.addEventListener('focus', (e) => e.target.select());
         });
 
-        // Preset Button Helper Function
-        function addPreset(categoryKey, amount) {
-            const numInput = document.getElementById(`${categoryKey}-num`);
-            const slider = document.getElementById(categoryKey);
-            let currentVal = parseFloat(numInput.value) || 0;
-            let newVal = Math.round((currentVal + amount) * 100) / 100;
+        // Repopulate the category dropdown to only show options valid for the
+        // currently selected transaction type, so a mismatched combo (e.g. an
+        // "Expense" logged against the "Income" category) can never be selected.
+        function updateCategoryOptions() {
+            const type = document.getElementById('log-type').value;
+            const categorySelect = document.getElementById('log-category');
+            const previousValue = categorySelect.value;
+            const options = categoryOptions.filter(c => c.type === type);
 
-            if (newVal > parseFloat(slider.max)) slider.max = Math.ceil(newVal);
-            numInput.value = newVal;
-            slider.value = newVal;
+            categorySelect.innerHTML = options.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
 
-            updateChart();
-            saveToStorage();
-        }
-
-        // Local Storage Helpers for Budget
-        function saveToStorage() {
-            const data = {};
-            keys.forEach(key => {
-                const val = parseFloat(document.getElementById(`${key}-num`).value) || 0;
-                data[key] = Math.max(0, Math.round(val * 100) / 100);
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        }
-
-        function loadFromStorage() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (!saved) return;
-
-            try {
-                const data = JSON.parse(saved);
-                keys.forEach(key => {
-                    if (data[key] !== undefined) {
-                        const slider = document.getElementById(key);
-                        const numInput = document.getElementById(`${key}-num`);
-                        const cleanVal = Math.max(0, parseFloat(data[key]) || 0);
-                        
-                        if (cleanVal > parseFloat(slider.max)) {
-                            slider.max = Math.ceil(cleanVal);
-                        }
-                        
-                        slider.value = cleanVal;
-                        numInput.value = cleanVal;
-                    }
-                });
-            } catch (e) {
-                console.error("Error reading saved budget data:", e);
+            if (options.some(c => c.value === previousValue)) {
+                categorySelect.value = previousValue;
             }
         }
 
-        function resetToDefaults() {
-            keys.forEach(key => {
-                const slider = document.getElementById(key);
-                const numInput = document.getElementById(`${key}-num`);
-                
-                slider.max = defaultMaxes[key];
-                slider.value = defaultValues[key];
-                numInput.value = defaultValues[key];
-            });
-            localStorage.removeItem(STORAGE_KEY);
-            updateChart();
+        document.getElementById('log-type').addEventListener('change', updateCategoryOptions);
+
+        // MONTH SELECTOR LOGIC
+        function getAvailableMonths() {
+            const set = new Set(transactions.map(t => getMonthKeyFromDate(t.date)));
+            set.add(getCurrentMonthKey());
+            set.add(currentMonthKey);
+            return Array.from(set).sort().reverse();
         }
 
-        // Two-way sync binding (Float safe)
-        keys.forEach(key => {
-            const slider = document.getElementById(key);
-            const numInput = document.getElementById(`${key}-num`);
+        function renderMonthSelector() {
+            const sel = document.getElementById('month-selector');
+            const months = getAvailableMonths();
 
-            slider.addEventListener('input', () => {
-                numInput.value = slider.value;
-                updateChart();
-                saveToStorage();
-            });
+            sel.innerHTML = months.map(m => `<option value="${m}">${formatMonthLabel(m)}</option>`).join('');
+            sel.value = months.includes(currentMonthKey) ? currentMonthKey : months[0];
+            currentMonthKey = sel.value;
+        }
 
-            numInput.addEventListener('input', () => {
-                let val = parseFloat(numInput.value);
-                if (isNaN(val) || val < 0) val = 0;
-                
-                if (val > parseFloat(slider.max)) {
-                    slider.max = Math.ceil(val);
-                }
-                
-                slider.value = val;
-                updateChart();
-                saveToStorage();
-            });
+        document.getElementById('month-selector').addEventListener('change', function() {
+            currentMonthKey = this.value;
+            renderAll();
         });
 
-        document.getElementById('reset-btn').addEventListener('click', resetToDefaults);
-
-        // Core Chart & KPI Rendering Function
-        function updateChart() {
-            const budget = Math.max(0, parseFloat(document.getElementById('budget-num').value) || 0);
-            const groceries = Math.max(0, parseFloat(document.getElementById('groceries-num').value) || 0);
-            const meals = Math.max(0, parseFloat(document.getElementById('meals-num').value) || 0);
-            const transport = Math.max(0, parseFloat(document.getElementById('transport-num').value) || 0);
-            const fees = Math.max(0, parseFloat(document.getElementById('fees-num').value) || 0);
-            const leisure = Math.max(0, parseFloat(document.getElementById('leisure-num').value) || 0);
-
-            const totalExpenses = Math.round((groceries + meals + transport + fees + leisure) * 100) / 100;
-            const surplus = Math.round((budget - totalExpenses) * 100) / 100;
-
-            // Update Top KPI Cards with float formatting
-            document.getElementById('kpi-budget').textContent = `€${formatMoney(budget)}`;
-            document.getElementById('kpi-expenses').textContent = `€${formatMoney(totalExpenses)}`;
-
-            const surplusCard = document.getElementById('kpi-surplus-card');
-            const surplusLabel = document.getElementById('kpi-surplus-label');
-            const surplusVal = document.getElementById('kpi-surplus');
-            const warningEl = document.getElementById('warning');
-
-            if (surplus < 0) {
-                surplusCard.className = "kpi-card deficit";
-                surplusLabel.textContent = "Deficit";
-                surplusVal.textContent = `-€${formatMoney(Math.abs(surplus))}`;
-                warningEl.style.display = "block";
-                warningEl.textContent = `Warning: Over budget by €${formatMoney(Math.abs(surplus))}!`;
-            } else {
-                surplusCard.className = "kpi-card surplus";
-                surplusLabel.textContent = "Remaining Surplus";
-                surplusVal.textContent = `€${formatMoney(surplus)}`;
-                warningEl.style.display = "none";
-            }
-
-            // Update Budget Progress Bar
-            const usedPercentage = budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0;
-            const progressBar = document.getElementById('progress-bar');
-            const progressStatus = document.getElementById('progress-status');
-
-            progressStatus.textContent = `${usedPercentage}% (€${formatMoney(totalExpenses)} / €${formatMoney(budget)})`;
-            progressBar.style.width = `${Math.min(usedPercentage, 100)}%`;
-
-            if (usedPercentage > 100) {
-                progressBar.style.backgroundColor = "var(--color-deficit)";
-            } else if (usedPercentage > 85) {
-                progressBar.style.backgroundColor = "var(--color-transport)";
-            } else {
-                progressBar.style.backgroundColor = "var(--color-meals)";
-            }
-
-            // Donut Center Text
-            centerAmount.text(`€${formatMoney(totalExpenses)}`);
-
-            // Prepare Chart Data
-            let data = [
-                { category: "Groceries", value: groceries },
-                { category: "Campus Meals", value: meals },
-                { category: "Transport", value: transport },
-                { category: "Fees & Health", value: fees },
-                { category: "Leisure & Other", value: leisure }
-            ];
-
-            // Filter out 0 value slices
-            data = data.filter(d => d.value > 0);
-
-            // Handle Empty / 0 Expense State to prevent NaN D3 Glitch
-            if (totalExpenses === 0 || data.length === 0) {
-                emptyRing.attr("d", arc({ startAngle: 0, endAngle: 2 * Math.PI })).style("display", "block");
-                svg.selectAll("path.slice").remove();
-                svg.selectAll(".slice-label").remove();
-                document.getElementById('legend').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size:0.85rem;">No active expense allocations</div>';
-                return;
-            } else {
-                emptyRing.style("display", "none");
-            }
-
-            const pieData = pie(data);
-
-            // Render Donut Slices
-            const paths = svg.selectAll("path.slice")
-                .data(pieData, d => d.data.category);
-
-            paths.exit().remove();
-
-            const newPaths = paths.enter()
-                .append("path")
-                .attr("class", "slice")
-                .attr("fill", d => colorMap[d.data.category])
-                .attr("stroke", "var(--card-bg)")
-                .style("stroke-width", "2px")
-                .on("mouseover", function(event, d) {
-                    d3.select(this)
-                      .transition().duration(150)
-                      .attr("d", arcHover);
-
-                    const pct = ((d.data.value / totalExpenses) * 100).toFixed(1);
-                    tooltip.style("opacity", 1)
-                           .html(`<strong>${d.data.category}</strong><br>€${formatMoney(d.data.value)} (${pct}% of spent)`);
-                })
-                .on("mousemove", function(event) {
-                    const [x, y] = d3.pointer(event, document.querySelector('.chart-container'));
-                    tooltip.style("left", (x + 15) + "px")
-                           .style("top", (y - 10) + "px");
-                })
-                .on("mouseleave", function() {
-                    d3.select(this)
-                      .transition().duration(150)
-                      .attr("d", arc);
-
-                    tooltip.style("opacity", 0);
-                });
-
-            // Smooth D3 Transition
-            paths.merge(newPaths)
-                .transition().duration(400)
-                .attrTween("d", function(d) {
-                    const interpolate = d3.interpolate(this._current || d, d);
-                    this._current = interpolate(1);
-                    return function(t) {
-                        return arc(interpolate(t));
-                    };
-                });
-
-            // Render Slice Labels
-            const labels = svg.selectAll(".slice-label")
-                .data(pieData, d => d.data.category);
-
-            labels.exit().remove();
-
-            const newLabels = labels.enter()
-                .append("text")
-                .attr("class", "slice-label")
-                .attr("text-anchor", "middle")
-                .attr("dy", "0.35em")
-                .style("fill", "#ffffff")
-                .style("font-size", "11px")
-                .style("font-weight", "700")
-                .style("pointer-events", "none");
-
-            labels.merge(newLabels)
-                .transition().duration(400)
-                .attr("transform", function(d) {
-                    return `translate(${arc.centroid(d)})`;
-                })
-                .text(d => {
-                    const pct = (d.data.value / totalExpenses) * 100;
-                    return pct >= 6 ? `${Math.round(pct)}%` : '';
-                });
-
-            // Render Legend
-            const legendEl = document.getElementById('legend');
-            legendEl.innerHTML = '';
-            
-            data.forEach(item => {
-                const pct = ((item.value / totalExpenses) * 100).toFixed(1);
-                const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
-                legendItem.innerHTML = `
-                    <div class="legend-label-group">
-                        <span class="color-dot" aria-hidden="true" style="background-color: ${colorMap[item.category]};"></span>
-                        <span>${item.category}</span>
-                    </div>
-                    <span class="legend-value">€${formatMoney(item.value)} (${pct}%)</span>
-                `;
-                legendEl.appendChild(legendItem);
-            });
+        function renderAll() {
+            renderTransactions();
+            updateChart();
+            renderTrends();
         }
 
         // TRANSACTION & LOG MANAGER LOGIC
@@ -1156,17 +830,20 @@
             if (saved) {
                 try {
                     transactions = JSON.parse(saved);
+                    let backfilled = false;
+                    transactions.forEach(t => {
+                        if (!t.id) { t.id = generateId(); backfilled = true; }
+                    });
+                    if (backfilled) localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
                 } catch (e) {
                     console.error("Error loading transactions:", e);
                     transactions = [];
                 }
             }
-            renderTransactions();
         }
 
         function saveTransactions() {
             localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
-            renderTransactions();
         }
 
         function renderTransactions() {
@@ -1174,20 +851,24 @@
             const emptyMsg = document.getElementById('empty-log-msg');
             tbody.innerHTML = '';
 
-            if (transactions.length === 0) {
+            const monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
+
+            if (monthTransactions.length === 0) {
+                emptyMsg.textContent = `No transactions logged for ${formatMonthLabel(currentMonthKey)} yet. Add your first expense or income above!`;
                 emptyMsg.style.display = 'block';
                 return;
             }
 
             emptyMsg.style.display = 'none';
 
-            transactions.forEach((item, index) => {
+            monthTransactions.forEach(item => {
                 const tr = document.createElement('tr');
                 const badgeClass = item.type === 'income' ? 'badge-income' : 'badge-expense';
                 const amountPrefix = item.type === 'income' ? '+€' : '-€';
                 const safeDesc = escapeHtml(item.desc);
                 const safeDate = escapeHtml(String(item.date));
-                const safeCategory = escapeHtml(String(item.category));
+                const categoryDef = categoryOptions.find(c => c.value === item.category);
+                const safeCategory = escapeHtml(categoryDef ? categoryDef.label : String(item.category));
 
                 tr.innerHTML = `
                     <td>${safeDate}</td>
@@ -1195,19 +876,11 @@
                     <td><strong>${safeDesc}</strong></td>
                     <td>${safeCategory}</td>
                     <td style="font-weight:700;">${amountPrefix}${parseFloat(item.amount).toFixed(2)}</td>
-                    <td><button class="btn-del" aria-label="Delete entry: ${safeDesc}" onclick="deleteTransaction(${index})" title="Delete entry">&times;</button></td>
+                    <td><button class="btn-del" aria-label="Delete entry: ${safeDesc}" onclick="deleteTransaction('${item.id}')" title="Delete entry">&times;</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
-
-        function escapeHtml(str) {
-            return str.replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-            });
-        }
-
-        document.getElementById('log-type').addEventListener('change', updateCategoryOptions);
 
         document.getElementById('log-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1220,6 +893,7 @@
             if (!desc || isNaN(amount) || amount <= 0) return;
 
             const newEntry = {
+                id: generateId(),
                 date: getLocalDateString(),
                 type,
                 desc,
@@ -1229,61 +903,45 @@
 
             transactions.unshift(newEntry);
             saveTransactions();
+            currentMonthKey = getCurrentMonthKey();
+            renderMonthSelector();
+            renderAll();
 
-            // Sync transaction with Budget Controls & Donut Chart
-            let targetKey = categoryToKey(category);
-            if (targetKey) {
-                const numInput = document.getElementById(`${targetKey}-num`);
-                const slider = document.getElementById(targetKey);
-                let currentVal = parseFloat(numInput.value) || 0;
-                let newVal = Math.round((currentVal + amount) * 100) / 100;
-
-                if (newVal > parseFloat(slider.max)) slider.max = Math.ceil(newVal);
-                numInput.value = newVal;
-                slider.value = newVal;
-
-                saveToStorage();
-                updateChart();
-            }
-
-            // Reset form
             document.getElementById('log-desc').value = '';
             document.getElementById('log-amount').value = '';
         });
 
-        function deleteTransaction(index) {
-            const item = transactions[index];
-            
-            if (item) {
-                let targetKey = categoryToKey(item.category);
-                if (targetKey) {
-                    const numInput = document.getElementById(`${targetKey}-num`);
-                    const slider = document.getElementById(targetKey);
-                    let currentVal = parseFloat(numInput.value) || 0;
-                    let newVal = Math.max(0, Math.round((currentVal - item.amount) * 100) / 100);
-
-                    numInput.value = newVal;
-                    slider.value = newVal;
-
-                    saveToStorage();
-                    updateChart();
-                }
-            }
-
-            transactions.splice(index, 1);
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
             saveTransactions();
+            renderMonthSelector();
+            renderAll();
         }
 
-        // Export Budget & Transactions to a JSON file
-        function exportData() {
-            const budgetData = localStorage.getItem(STORAGE_KEY);
-            const transactionsData = localStorage.getItem(TRANSACTIONS_KEY);
+        // Quick Add: logs a transaction directly, no manual form needed
+        function quickLogTransaction(desc, category, amount) {
+            const newEntry = {
+                id: generateId(),
+                date: getLocalDateString(),
+                type: 'expense',
+                desc,
+                category,
+                amount
+            };
 
+            transactions.unshift(newEntry);
+            saveTransactions();
+            currentMonthKey = getCurrentMonthKey();
+            renderMonthSelector();
+            renderAll();
+        }
+
+        // Export Transactions to a JSON file
+        function exportData() {
             const exportObj = {
-                version: "1.0",
+                version: "2.0",
                 exportedAt: new Date().toISOString(),
-                budget: budgetData ? JSON.parse(budgetData) : defaultValues,
-                transactions: transactionsData ? JSON.parse(transactionsData) : []
+                transactions
             };
 
             const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
@@ -1310,27 +968,16 @@
                 ? item.date
                 : getLocalDateString();
             const desc = typeof item.desc === 'string' ? item.desc.slice(0, 200) : '';
+            const id = (typeof item.id === 'string' && item.id.length > 0) ? item.id : generateId();
 
             if (!type || !category || !isFinite(amount) || amount <= 0) return null;
-            // A type/category combo must actually match (e.g. "expense" can't be paired with "Income")
             const categoryDef = categoryOptions.find(c => c.value === category);
             if (!categoryDef || categoryDef.type !== type) return null;
 
-            return { date, type, desc, category, amount };
+            return { id, date, type, desc, category, amount };
         }
 
-        // Validate & clean the imported budget object, falling back to defaults
-        // for any missing, non-numeric, or out-of-range value.
-        function sanitizeBudget(budget) {
-            const sanitized = {};
-            keys.forEach(key => {
-                const val = budget && typeof budget === 'object' ? parseFloat(budget[key]) : NaN;
-                sanitized[key] = (isFinite(val) && val >= 0) ? Math.round(val * 100) / 100 : defaultValues[key];
-            });
-            return sanitized;
-        }
-
-        // Import Budget & Transactions from a JSON file
+        // Import Transactions from a JSON file
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1340,49 +987,293 @@
                 try {
                     const importedObj = JSON.parse(e.target.result);
 
-                    if (importedObj.budget) {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeBudget(importedObj.budget)));
+                    if (!Array.isArray(importedObj.transactions)) {
+                        throw new Error("No transactions array found in file");
                     }
 
-                    if (Array.isArray(importedObj.transactions)) {
-                        const cleaned = importedObj.transactions
-                            .map(sanitizeTransaction)
-                            .filter(t => t !== null);
-                        const skipped = importedObj.transactions.length - cleaned.length;
+                    const cleaned = importedObj.transactions.map(sanitizeTransaction).filter(t => t !== null);
+                    const skipped = importedObj.transactions.length - cleaned.length;
 
-                        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(cleaned));
+                    transactions = cleaned;
+                    saveTransactions();
+                    currentMonthKey = getCurrentMonthKey();
+                    renderMonthSelector();
+                    renderAll();
 
-                        loadFromStorage();
-                        loadTransactions();
-                        updateChart();
-
-                        alert(skipped > 0
-                            ? `Import complete. ${skipped} invalid transaction(s) were skipped.`
-                            : "Budget data imported successfully!");
-                        return;
-                    }
-
-                    loadFromStorage();
-                    loadTransactions();
-                    updateChart();
-
-                    alert("Budget data imported successfully!");
+                    alert(skipped > 0
+                        ? `Import complete. ${skipped} invalid transaction(s) were skipped.`
+                        : "Transactions imported successfully!");
                 } catch (err) {
                     alert("Failed to import: Please ensure you selected a valid budget JSON file.");
                     console.error("Import error:", err);
                 }
             };
             reader.readAsText(file);
-            
+
             event.target.value = '';
+        }
+
+        // Core Chart & KPI Rendering Function — computed entirely from the
+        // transaction log for the currently selected month.
+        function updateChart() {
+            const monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
+
+            const budget = Math.round(
+                monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) * 100
+            ) / 100;
+
+            let data = categoryOptions.filter(c => c.type === 'expense').map(c => ({
+                category: c.value,
+                label: c.label,
+                color: c.color,
+                value: Math.round(
+                    monthTransactions
+                        .filter(t => t.type === 'expense' && t.category === c.value)
+                        .reduce((sum, t) => sum + t.amount, 0) * 100
+                ) / 100
+            }));
+
+            const totalExpenses = Math.round(data.reduce((sum, d) => sum + d.value, 0) * 100) / 100;
+            const surplus = Math.round((budget - totalExpenses) * 100) / 100;
+
+            document.getElementById('kpi-budget').textContent = `€${formatMoney(budget)}`;
+            document.getElementById('kpi-expenses').textContent = `€${formatMoney(totalExpenses)}`;
+
+            const surplusCard = document.getElementById('kpi-surplus-card');
+            const surplusLabel = document.getElementById('kpi-surplus-label');
+            const surplusVal = document.getElementById('kpi-surplus');
+            const warningEl = document.getElementById('warning');
+
+            if (surplus < 0) {
+                surplusCard.className = "kpi-card deficit";
+                surplusLabel.textContent = "Deficit";
+                surplusVal.textContent = `-€${formatMoney(Math.abs(surplus))}`;
+                warningEl.style.display = "block";
+                warningEl.textContent = `Warning: Over budget by €${formatMoney(Math.abs(surplus))}!`;
+            } else {
+                surplusCard.className = "kpi-card surplus";
+                surplusLabel.textContent = "Remaining Surplus";
+                surplusVal.textContent = `€${formatMoney(surplus)}`;
+                warningEl.style.display = "none";
+            }
+
+            const usedPercentage = budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0;
+            const progressBar = document.getElementById('progress-bar');
+            const progressStatus = document.getElementById('progress-status');
+
+            progressStatus.textContent = `${usedPercentage}% (€${formatMoney(totalExpenses)} / €${formatMoney(budget)})`;
+            progressBar.style.width = `${Math.min(usedPercentage, 100)}%`;
+
+            if (usedPercentage > 100) {
+                progressBar.style.backgroundColor = "var(--color-deficit)";
+            } else if (usedPercentage > 85) {
+                progressBar.style.backgroundColor = "var(--color-transport)";
+            } else {
+                progressBar.style.backgroundColor = "var(--color-meals)";
+            }
+
+            centerAmount.text(`€${formatMoney(totalExpenses)}`);
+
+            data = data.filter(d => d.value > 0);
+
+            if (totalExpenses === 0 || data.length === 0) {
+                emptyRing.attr("d", arc({ startAngle: 0, endAngle: 2 * Math.PI })).style("display", "block");
+                svg.selectAll("path.slice").remove();
+                svg.selectAll(".slice-label").remove();
+                document.getElementById('legend').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size:0.85rem;">No expenses logged for this month yet</div>';
+                return;
+            } else {
+                emptyRing.style("display", "none");
+            }
+
+            const pieData = pie(data);
+
+            const paths = svg.selectAll("path.slice")
+                .data(pieData, d => d.data.category);
+
+            paths.exit().remove();
+
+            const newPaths = paths.enter()
+                .append("path")
+                .attr("class", "slice")
+                .attr("fill", d => d.data.color)
+                .attr("stroke", "var(--card-bg)")
+                .style("stroke-width", "2px")
+                .on("mouseover", function(event, d) {
+                    d3.select(this)
+                      .transition().duration(150)
+                      .attr("d", arcHover);
+
+                    const pct = ((d.data.value / totalExpenses) * 100).toFixed(1);
+                    tooltip.style("opacity", 1)
+                           .html(`<strong>${d.data.label}</strong><br>€${formatMoney(d.data.value)} (${pct}% of spent)`);
+                })
+                .on("mousemove", function(event) {
+                    const [x, y] = d3.pointer(event, document.querySelector('.chart-container'));
+                    tooltip.style("left", (x + 15) + "px")
+                           .style("top", (y - 10) + "px");
+                })
+                .on("mouseleave", function() {
+                    d3.select(this)
+                      .transition().duration(150)
+                      .attr("d", arc);
+
+                    tooltip.style("opacity", 0);
+                });
+
+            paths.merge(newPaths)
+                .transition().duration(400)
+                .attrTween("d", function(d) {
+                    const interpolate = d3.interpolate(this._current || d, d);
+                    this._current = interpolate(1);
+                    return function(t) {
+                        return arc(interpolate(t));
+                    };
+                });
+
+            const labels = svg.selectAll(".slice-label")
+                .data(pieData, d => d.data.category);
+
+            labels.exit().remove();
+
+            const newLabels = labels.enter()
+                .append("text")
+                .attr("class", "slice-label")
+                .attr("text-anchor", "middle")
+                .attr("dy", "0.35em")
+                .style("fill", "#ffffff")
+                .style("font-size", "11px")
+                .style("font-weight", "700")
+                .style("pointer-events", "none");
+
+            labels.merge(newLabels)
+                .transition().duration(400)
+                .attr("transform", function(d) {
+                    return `translate(${arc.centroid(d)})`;
+                })
+                .text(d => {
+                    const pct = (d.data.value / totalExpenses) * 100;
+                    return pct >= 6 ? `${Math.round(pct)}%` : '';
+                });
+
+            const legendEl = document.getElementById('legend');
+            legendEl.innerHTML = '';
+
+            data.forEach(item => {
+                const pct = ((item.value / totalExpenses) * 100).toFixed(1);
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `
+                    <div class="legend-label-group">
+                        <span class="color-dot" aria-hidden="true" style="background-color: ${item.color};"></span>
+                        <span>${item.label}</span>
+                    </div>
+                    <span class="legend-value">€${formatMoney(item.value)} (${pct}%)</span>
+                `;
+                legendEl.appendChild(legendItem);
+            });
+        }
+
+        // Monthly Trends: grouped bar chart comparing income vs expenses
+        // across every month present in the transaction log.
+        function renderTrends() {
+            const monthTotals = {};
+            transactions.forEach(t => {
+                const mk = getMonthKeyFromDate(t.date);
+                if (!monthTotals[mk]) monthTotals[mk] = { income: 0, expense: 0 };
+                monthTotals[mk][t.type] += t.amount;
+            });
+            if (!monthTotals[getCurrentMonthKey()]) {
+                monthTotals[getCurrentMonthKey()] = { income: 0, expense: 0 };
+            }
+
+            const months = Object.keys(monthTotals).sort();
+            const chartData = months.map(mk => ({
+                month: mk,
+                label: formatMonthShort(mk),
+                income: Math.round(monthTotals[mk].income * 100) / 100,
+                expense: Math.round(monthTotals[mk].expense * 100) / 100
+            }));
+
+            const trendsSvg = d3.select('#trends-chart');
+            trendsSvg.selectAll('*').remove();
+
+            const chartMargin = { top: 15, right: 15, bottom: 40, left: 55 };
+            const chartWidth = 600 - chartMargin.left - chartMargin.right;
+            const chartHeight = 260 - chartMargin.top - chartMargin.bottom;
+
+            const g = trendsSvg.append('g')
+                .attr('transform', `translate(${chartMargin.left},${chartMargin.top})`);
+
+            const x0 = d3.scaleBand()
+                .domain(chartData.map(d => d.label))
+                .range([0, chartWidth])
+                .paddingInner(0.35);
+
+            const x1 = d3.scaleBand()
+                .domain(['income', 'expense'])
+                .range([0, x0.bandwidth()])
+                .padding(0.12);
+
+            const maxVal = d3.max(chartData, d => Math.max(d.income, d.expense)) || 10;
+            const y = d3.scaleLinear()
+                .domain([0, maxVal * 1.15])
+                .range([chartHeight, 0]);
+
+            g.append('g')
+                .attr('class', 'axis x-axis')
+                .attr('transform', `translate(0,${chartHeight})`)
+                .call(d3.axisBottom(x0).tickSizeOuter(0))
+                .selectAll('text')
+                .attr('transform', 'rotate(-25)')
+                .style('text-anchor', 'end');
+
+            g.append('g')
+                .attr('class', 'axis y-axis')
+                .call(d3.axisLeft(y).ticks(5).tickFormat(d => `€${d}`));
+
+            const monthGroups = g.selectAll('.month-group')
+                .data(chartData)
+                .enter()
+                .append('g')
+                .attr('class', 'month-group')
+                .attr('transform', d => `translate(${x0(d.label)},0)`);
+
+            ['income', 'expense'].forEach(key => {
+                monthGroups.append('rect')
+                    .attr('x', x1(key))
+                    .attr('y', d => y(d[key]))
+                    .attr('width', x1.bandwidth())
+                    .attr('height', d => chartHeight - y(d[key]))
+                    .attr('rx', 2)
+                    .attr('fill', key === 'income' ? TREND_COLORS.income : TREND_COLORS.expense)
+                    .style('cursor', 'pointer')
+                    .on('click', function(event, d) {
+                        currentMonthKey = d.month;
+                        renderMonthSelector();
+                        renderAll();
+                    })
+                    .on('mouseover', function(event, d) {
+                        tooltip.style('opacity', 1)
+                               .html(`<strong>${d.label}</strong><br>${key === 'income' ? 'Income' : 'Expenses'}: €${formatMoney(d[key])}`);
+                    })
+                    .on('mousemove', function(event) {
+                        const [x, y2] = d3.pointer(event, document.querySelector('.trends-card'));
+                        tooltip.style('left', (x + 15) + 'px')
+                               .style('top', (y2 - 10) + 'px');
+                    })
+                    .on('mouseleave', function() {
+                        tooltip.style('opacity', 0);
+                    });
+            });
         }
 
         // Initialize App
         initTheme();
         updateCategoryOptions();
-        loadFromStorage();
         loadTransactions();
-        updateChart();
+        renderMonthSelector();
+        renderAll();
     </script>
 </body>
 </html>

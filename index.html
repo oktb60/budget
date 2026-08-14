@@ -165,6 +165,37 @@
             color: var(--color-deficit);
         }
 
+        .kpi-budget-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .budget-input {
+            display: none;
+            width: 100px;
+            font-size: 1.15rem;
+        }
+
+        .btn-edit-budget {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+
+        .btn-edit-budget:hover {
+            border-color: var(--color-meals);
+            color: var(--color-meals);
+        }
+
         /* Main Grid */
         .main-grid {
             display: grid;
@@ -434,7 +465,7 @@
 
         .log-form {
             display: grid;
-            grid-template-columns: 120px 1fr 140px 110px 100px;
+            grid-template-columns: 120px 1fr 140px 110px 135px 90px;
             gap: 0.6rem;
             margin-bottom: 1.25rem;
         }
@@ -546,9 +577,17 @@
 
         <!-- Top KPI Bar -->
         <div class="kpi-grid">
+            <div class="kpi-card" id="kpi-target-card">
+                <span class="kpi-label">Monthly Budget</span>
+                <div class="kpi-budget-row">
+                    <span class="kpi-value" id="kpi-budget-display">€0</span>
+                    <input type="number" id="kpi-budget-input" class="num-input budget-input" min="0" step="1" aria-label="Set monthly budget amount">
+                    <button type="button" class="btn-edit-budget" id="budget-edit-btn" title="Set monthly budget" aria-label="Set monthly budget">✎</button>
+                </div>
+            </div>
             <div class="kpi-card">
                 <span class="kpi-label">Monthly Income</span>
-                <span class="kpi-value" id="kpi-budget">€0</span>
+                <span class="kpi-value" id="kpi-income">€0</span>
             </div>
             <div class="kpi-card">
                 <span class="kpi-label">Expenses Logged</span>
@@ -583,7 +622,7 @@
                 <!-- Income Utilization Progress Bar -->
                 <div class="progress-box">
                     <div class="progress-header">
-                        <span>Income Used</span>
+                        <span id="progress-label">Budget Used</span>
                         <span id="progress-status">0%</span>
                     </div>
                     <div class="progress-track">
@@ -627,6 +666,7 @@
                     <input type="text" class="text-input" id="log-desc" placeholder="e.g. Prisma Groceries, Kela, Sitsit" required aria-label="Transaction Description">
                     <select class="select-input" id="log-category" aria-label="Transaction Category"></select>
                     <input type="number" class="num-input" id="log-amount" style="width: 100%; text-align: left;" placeholder="€ Amount" step="0.01" min="0.01" required aria-label="Transaction Amount">
+                    <input type="date" class="text-input" id="log-date" aria-label="Transaction Date" required>
                     <button type="submit" class="btn-add">+ Log</button>
                 </form>
 
@@ -657,6 +697,7 @@
     <script>
         const THEME_KEY = 'lappeenranta_theme_preference';
         const TRANSACTIONS_KEY = 'lappeenranta_transactions_data';
+        const BUDGETS_KEY = 'lappeenranta_budgets_data';
 
         // Single source of truth for every category: which transaction type it's
         // valid for, and the color used consistently across the donut chart & legend.
@@ -672,6 +713,7 @@
         const TREND_COLORS = { income: '#10b981', expense: '#3b82f6' };
 
         let transactions = [];
+        let budgets = {}; // { "YYYY-MM": amount }
         let currentMonthKey = getCurrentMonthKey();
 
         // Helper: Local Date Format (YYYY-MM-DD) avoiding UTC offsets
@@ -778,6 +820,42 @@
             input.addEventListener('focus', (e) => e.target.select());
         });
 
+        // Monthly Budget: inline edit control on the KPI card
+        const budgetDisplay = document.getElementById('kpi-budget-display');
+        const budgetInputEl = document.getElementById('kpi-budget-input');
+        const budgetEditBtn = document.getElementById('budget-edit-btn');
+
+        function enterBudgetEditMode() {
+            budgetInputEl.value = getBudgetForMonth(currentMonthKey) || '';
+            budgetDisplay.style.display = 'none';
+            budgetInputEl.style.display = 'inline-block';
+            budgetInputEl.focus();
+            budgetInputEl.select();
+        }
+
+        function exitBudgetEditMode(shouldSave) {
+            if (shouldSave) {
+                const val = parseFloat(budgetInputEl.value);
+                setBudgetForMonth(currentMonthKey, isNaN(val) ? 0 : val);
+                updateChart();
+            }
+            budgetInputEl.style.display = 'none';
+            budgetDisplay.style.display = 'inline';
+        }
+
+        budgetEditBtn.addEventListener('click', enterBudgetEditMode);
+
+        budgetInputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                exitBudgetEditMode(true);
+            } else if (e.key === 'Escape') {
+                exitBudgetEditMode(false);
+            }
+        });
+
+        budgetInputEl.addEventListener('blur', () => exitBudgetEditMode(true));
+
         // Repopulate the category dropdown to only show options valid for the
         // currently selected transaction type, so a mismatched combo (e.g. an
         // "Expense" logged against the "Income" category) can never be selected.
@@ -846,6 +924,37 @@
             localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
         }
 
+        // BUDGET PLANNING: a separate, explicitly-set target per month, distinct
+        // from actual income logged. This is what "Income Used" / surplus should
+        // be measured against once the user has planned a budget for the month.
+        function loadBudgets() {
+            const saved = localStorage.getItem(BUDGETS_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    budgets = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+                } catch (e) {
+                    console.error("Error loading budgets:", e);
+                    budgets = {};
+                }
+            }
+        }
+
+        function saveBudgets() {
+            localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
+        }
+
+        function getBudgetForMonth(monthKey) {
+            const val = budgets[monthKey];
+            return (typeof val === 'number' && isFinite(val) && val >= 0) ? val : 0;
+        }
+
+        function setBudgetForMonth(monthKey, value) {
+            const clean = (isFinite(value) && value >= 0) ? Math.round(value * 100) / 100 : 0;
+            budgets[monthKey] = clean;
+            saveBudgets();
+        }
+
         function renderTransactions() {
             const tbody = document.getElementById('log-table-body');
             const emptyMsg = document.getElementById('empty-log-msg');
@@ -876,11 +985,19 @@
                     <td><strong>${safeDesc}</strong></td>
                     <td>${safeCategory}</td>
                     <td style="font-weight:700;">${amountPrefix}${parseFloat(item.amount).toFixed(2)}</td>
-                    <td><button class="btn-del" aria-label="Delete entry: ${safeDesc}" onclick="deleteTransaction('${item.id}')" title="Delete entry">&times;</button></td>
+                    <td><button class="btn-del" data-id="${escapeHtml(String(item.id))}" aria-label="Delete entry: ${safeDesc}" title="Delete entry">&times;</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
+
+        // Event delegation for delete buttons: avoids ever building an inline
+        // onclick string out of transaction data (which is how the previous
+        // version could be broken by a crafted id from an imported file).
+        document.getElementById('log-table-body').addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-del');
+            if (btn) deleteTransaction(btn.dataset.id);
+        });
 
         document.getElementById('log-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -889,12 +1006,14 @@
             const desc = document.getElementById('log-desc').value.trim();
             const category = document.getElementById('log-category').value;
             const amount = parseFloat(document.getElementById('log-amount').value);
+            const dateInput = document.getElementById('log-date').value;
+            const date = /^\d{4}-\d{2}-\d{2}$/.test(dateInput) ? dateInput : getLocalDateString();
 
             if (!desc || isNaN(amount) || amount <= 0) return;
 
             const newEntry = {
                 id: generateId(),
-                date: getLocalDateString(),
+                date,
                 type,
                 desc,
                 category,
@@ -903,12 +1022,13 @@
 
             transactions.unshift(newEntry);
             saveTransactions();
-            currentMonthKey = getCurrentMonthKey();
+            currentMonthKey = getMonthKeyFromDate(date);
             renderMonthSelector();
             renderAll();
 
             document.getElementById('log-desc').value = '';
             document.getElementById('log-amount').value = '';
+            document.getElementById('log-date').value = getLocalDateString();
         });
 
         function deleteTransaction(id) {
@@ -939,9 +1059,10 @@
         // Export Transactions to a JSON file
         function exportData() {
             const exportObj = {
-                version: "2.0",
+                version: "2.1",
                 exportedAt: new Date().toISOString(),
-                transactions
+                transactions,
+                budgets
             };
 
             const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
@@ -968,7 +1089,11 @@
                 ? item.date
                 : getLocalDateString();
             const desc = typeof item.desc === 'string' ? item.desc.slice(0, 200) : '';
-            const id = (typeof item.id === 'string' && item.id.length > 0) ? item.id : generateId();
+            // Always regenerate the id rather than trusting the file's value —
+            // an imported id is never used for anything except identifying the
+            // row for deletion, so there's no reason to accept arbitrary
+            // attacker-controlled content here.
+            const id = generateId();
 
             if (!type || !category || !isFinite(amount) || amount <= 0) return null;
             const categoryDef = categoryOptions.find(c => c.value === category);
@@ -996,6 +1121,23 @@
 
                     transactions = cleaned;
                     saveTransactions();
+
+                    // Budgets are optional in older backup files; validate each
+                    // entry the same way sanitizeTransaction validates amounts.
+                    if (importedObj.budgets && typeof importedObj.budgets === 'object' && !Array.isArray(importedObj.budgets)) {
+                        const cleanBudgets = {};
+                        Object.keys(importedObj.budgets).forEach(monthKey => {
+                            if (/^\d{4}-\d{2}$/.test(monthKey)) {
+                                const val = parseFloat(importedObj.budgets[monthKey]);
+                                if (isFinite(val) && val >= 0) {
+                                    cleanBudgets[monthKey] = Math.round(val * 100) / 100;
+                                }
+                            }
+                        });
+                        budgets = cleanBudgets;
+                        saveBudgets();
+                    }
+
                     currentMonthKey = getCurrentMonthKey();
                     renderMonthSelector();
                     renderAll();
@@ -1018,9 +1160,16 @@
         function updateChart() {
             const monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
 
-            const budget = Math.round(
+            const incomeTotal = Math.round(
                 monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) * 100
             ) / 100;
+
+            const targetBudget = getBudgetForMonth(currentMonthKey);
+            // Plan against the budget the user explicitly set for this month; if
+            // they haven't set one yet, fall back to logged income so the app is
+            // still useful before a budget has been entered.
+            const planningBudget = targetBudget > 0 ? targetBudget : incomeTotal;
+            const usingFallbackBudget = targetBudget <= 0;
 
             let data = categoryOptions.filter(c => c.type === 'expense').map(c => ({
                 category: c.value,
@@ -1034,15 +1183,19 @@
             }));
 
             const totalExpenses = Math.round(data.reduce((sum, d) => sum + d.value, 0) * 100) / 100;
-            const surplus = Math.round((budget - totalExpenses) * 100) / 100;
+            const surplus = Math.round((planningBudget - totalExpenses) * 100) / 100;
 
-            document.getElementById('kpi-budget').textContent = `€${formatMoney(budget)}`;
+            document.getElementById('kpi-budget-display').textContent = `€${formatMoney(targetBudget)}`;
+            document.getElementById('kpi-income').textContent = `€${formatMoney(incomeTotal)}`;
             document.getElementById('kpi-expenses').textContent = `€${formatMoney(totalExpenses)}`;
 
             const surplusCard = document.getElementById('kpi-surplus-card');
             const surplusLabel = document.getElementById('kpi-surplus-label');
             const surplusVal = document.getElementById('kpi-surplus');
             const warningEl = document.getElementById('warning');
+            const progressLabel = document.getElementById('progress-label');
+
+            progressLabel.textContent = usingFallbackBudget ? "Income Used" : "Budget Used";
 
             if (surplus < 0) {
                 surplusCard.className = "kpi-card deficit";
@@ -1057,16 +1210,21 @@
                 warningEl.style.display = "none";
             }
 
-            const usedPercentage = budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0;
+            // Keep this numeric until the very last moment — comparing the
+            // .toFixed() string against 100/85 below would coerce back to a
+            // number anyway, but formatting early invites exactly that kind
+            // of subtle bug if the thresholds ever change.
+            const usedPercentageNum = planningBudget > 0 ? (totalExpenses / planningBudget) * 100 : 0;
+            const usedPercentage = usedPercentageNum.toFixed(1);
             const progressBar = document.getElementById('progress-bar');
             const progressStatus = document.getElementById('progress-status');
 
-            progressStatus.textContent = `${usedPercentage}% (€${formatMoney(totalExpenses)} / €${formatMoney(budget)})`;
-            progressBar.style.width = `${Math.min(usedPercentage, 100)}%`;
+            progressStatus.textContent = `${usedPercentage}% (€${formatMoney(totalExpenses)} / €${formatMoney(planningBudget)})`;
+            progressBar.style.width = `${Math.min(usedPercentageNum, 100)}%`;
 
-            if (usedPercentage > 100) {
+            if (usedPercentageNum > 100) {
                 progressBar.style.backgroundColor = "var(--color-deficit)";
-            } else if (usedPercentage > 85) {
+            } else if (usedPercentageNum > 85) {
                 progressBar.style.backgroundColor = "var(--color-transport)";
             } else {
                 progressBar.style.backgroundColor = "var(--color-meals)";
@@ -1272,6 +1430,8 @@
         initTheme();
         updateCategoryOptions();
         loadTransactions();
+        loadBudgets();
+        document.getElementById('log-date').value = getLocalDateString();
 
         // Ensure currentMonthKey points to the latest month with data if available
         if (transactions.length > 0) {

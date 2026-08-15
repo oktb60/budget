@@ -754,13 +754,14 @@
                 <div class="card-header">
                     <h2 class="card-title">Quick Add</h2>
                 </div>
-                <p class="quick-add-hint">Tap a common expense to log it instantly, or use the full form below for anything else.</p>
-                <div class="preset-buttons">
+                <p class="quick-add-hint" id="quick-add-hint">Tap a common expense to log it instantly, or use the full form below for anything else.</p>
+                <div class="preset-buttons" id="quick-add-presets">
                     <button type="button" class="btn-preset" onclick="quickLogTransaction('Sitsit Ticket', 'Leisure & Other', 20)">+ Sitsit Ticket (€20)</button>
                     <button type="button" class="btn-preset" onclick="quickLogTransaction('Student Overalls', 'Leisure & Other', 40)">+ Student Overalls (€40)</button>
                     <button type="button" class="btn-preset" onclick="quickLogTransaction('S-Market Stock Up', 'Groceries', 35)">+ S-Market Stock Up (€35)</button>
                     <button type="button" class="btn-preset" onclick="quickLogTransaction('YTHS Semester Fee', 'Fees & Health', 37)">+ YTHS Semester Fee (€37)</button>
                 </div>
+                <p class="quick-add-hint" id="quick-add-locked-msg" style="display:none;">Switch to Month view to log new transactions.</p>
 
                 <!-- Per-Category Limits Section -->
                 <div class="cat-caps-container">
@@ -840,7 +841,7 @@
                     <select class="select-input" id="log-category" aria-label="Transaction Category"></select>
                     <input type="number" class="num-input" id="log-amount" style="width: 100%; text-align: left;" placeholder="€ Amount" step="0.01" min="0.01" required aria-label="Transaction Amount">
                     <input type="date" class="text-input" id="log-date" aria-label="Transaction Date" required>
-                    
+
                     <label class="recurring-checkbox-group" title="Auto-log this entry every month">
                         <input type="checkbox" id="log-recurring"> Repeat
                     </label>
@@ -850,6 +851,7 @@
                         <button type="button" class="btn-cancel-edit" id="btn-cancel-edit" onclick="cancelEditMode()">Cancel</button>
                     </div>
                 </form>
+                <p class="quick-add-hint" id="log-form-locked-msg" style="display:none; margin-bottom: 1.25rem;">Switch to Month view to add or edit transactions. Semester and Year are read-only review views.</p>
 
                 <!-- Search & Filters Bar -->
                 <div class="table-controls">
@@ -979,13 +981,19 @@
         }
 
         // SEMESTER / YEAR ROLLUP HELPERS
-        // Semesters are an approximation of the Finnish academic calendar:
-        // H1 (Spring) = Jan-Jun, H2 (Fall) = Jul-Dec. Internal keys stay
-        // "YYYY-H1"/"YYYY-H2" so they sort correctly; display labels map to
-        // "Spring"/"Fall".
+        // Fixed to your actual academic calendar:
+        //   Semester 1 = August-December
+        //   Semester 2 = January-June
+        //   July belongs to neither (between semesters) — it still shows up in
+        //   Year view, just not in either semester rollup.
+        // Internal keys use the semester's start month ("YYYY-08" / "YYYY-01")
+        // so they sort chronologically; the display label maps that back to
+        // "Semester 1" / "Semester 2".
         function getSemesterKeyFromMonth(monthKey) {
             const [y, m] = monthKey.split('-').map(Number);
-            return `${y}-${m <= 6 ? 'H1' : 'H2'}`;
+            if (m >= 8) return `${y}-08`;  // Semester 1: Aug-Dec
+            if (m <= 6) return `${y}-01`;  // Semester 2: Jan-Jun
+            return null;                    // July: not part of a semester
         }
 
         function getYearKeyFromMonth(monthKey) {
@@ -994,7 +1002,10 @@
 
         function monthKeyInPeriod(monthKey, periodKey, mode) {
             if (mode === 'month') return monthKey === periodKey;
-            if (mode === 'semester') return getSemesterKeyFromMonth(monthKey) === periodKey;
+            if (mode === 'semester') {
+                const sk = getSemesterKeyFromMonth(monthKey);
+                return sk !== null && sk === periodKey;
+            }
             if (mode === 'year') return getYearKeyFromMonth(monthKey) === periodKey;
             return false;
         }
@@ -1003,8 +1014,8 @@
             if (mode === 'month') return formatMonthLabel(periodKey);
             if (mode === 'year') return periodKey;
             if (mode === 'semester') {
-                const [y, half] = periodKey.split('-');
-                return `${half === 'H1' ? 'Spring' : 'Fall'} ${y}`;
+                const [y, startMonth] = periodKey.split('-');
+                return startMonth === '08' ? `Semester 1 ${y} (Aug–Dec)` : `Semester 2 ${y} (Jan–Jun)`;
             }
             return periodKey;
         }
@@ -1015,7 +1026,10 @@
             monthKeys.add(getCurrentMonthKey());
             monthKeys.add(currentMonthKey);
             const periodSet = new Set();
-            monthKeys.forEach(mk => periodSet.add(mode === 'semester' ? getSemesterKeyFromMonth(mk) : getYearKeyFromMonth(mk)));
+            monthKeys.forEach(mk => {
+                const p = mode === 'semester' ? getSemesterKeyFromMonth(mk) : getYearKeyFromMonth(mk);
+                if (p !== null) periodSet.add(p);
+            });
             return Array.from(periodSet).sort().reverse();
         }
 
@@ -1218,6 +1232,18 @@
             const incomeLabel = viewMode === 'month' ? 'Monthly Income' : (viewMode === 'semester' ? 'Semester Income' : 'Yearly Income');
             document.getElementById('kpi-target-label').textContent = targetLabel;
             document.getElementById('kpi-income-label').textContent = incomeLabel;
+
+            // Semester/Year are read-only review views — no adding, editing, or
+            // deleting transactions until you switch back to Month.
+            document.getElementById('quick-add-hint').style.display = isMonth ? 'block' : 'none';
+            document.getElementById('quick-add-presets').style.display = isMonth ? 'flex' : 'none';
+            document.getElementById('quick-add-locked-msg').style.display = isMonth ? 'none' : 'block';
+            document.getElementById('log-form').style.display = isMonth ? '' : 'none';
+            document.getElementById('log-form-locked-msg').style.display = isMonth ? 'none' : 'block';
+
+            if (!isMonth && editingTransactionId) {
+                cancelEditMode();
+            }
         }
 
         document.getElementById('view-mode-selector').addEventListener('change', function() {
@@ -1689,9 +1715,22 @@
                 const categoryDef = categoryOptions.find(c => c.value === item.category);
                 const safeCategory = escapeHtml(categoryDef ? categoryDef.label : String(item.category));
                 const recurringBadge = item.recurring ? `<span class="badge badge-recurring">↺ Monthly</span>` : '';
-                const stopBtn = item.recurringTemplateId
-                    ? `<button class="btn-action" onclick="endRecurringSeries('${escapeHtml(String(item.id))}')" title="Stop this from repeating in future months">⏸️</button>`
-                    : '';
+
+                // Semester/Year views are read-only — no editing/deleting/
+                // stopping a series from an aggregated multi-month list.
+                let actionsCell = '<span style="color:var(--text-muted); font-size:0.8rem;">—</span>';
+                if (viewMode === 'month') {
+                    const stopBtn = item.recurringTemplateId
+                        ? `<button class="btn-action" onclick="endRecurringSeries('${escapeHtml(String(item.id))}')" title="Stop this from repeating in future months">⏸️</button>`
+                        : '';
+                    actionsCell = `
+                        <div class="action-btns">
+                            <button class="btn-action edit" onclick="startEditTransaction('${escapeHtml(String(item.id))}')" title="Edit entry">✏️</button>
+                            ${stopBtn}
+                            <button class="btn-action delete" onclick="deleteTransaction('${escapeHtml(String(item.id))}')" title="Delete entry">&times;</button>
+                        </div>
+                    `;
+                }
 
                 tr.innerHTML = `
                     <td>${safeDate}</td>
@@ -1699,13 +1738,7 @@
                     <td><strong>${safeDesc}</strong>${recurringBadge}</td>
                     <td>${safeCategory}</td>
                     <td style="font-weight:700;">${amountPrefix}${parseFloat(item.amount).toFixed(2)}</td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="btn-action edit" onclick="startEditTransaction('${escapeHtml(String(item.id))}')" title="Edit entry">✏️</button>
-                            ${stopBtn}
-                            <button class="btn-action delete" onclick="deleteTransaction('${escapeHtml(String(item.id))}')" title="Delete entry">&times;</button>
-                        </div>
-                    </td>
+                    <td>${actionsCell}</td>
                 `;
                 tbody.appendChild(tr);
             });

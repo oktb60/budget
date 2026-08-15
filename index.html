@@ -113,7 +113,7 @@
         /* Top Summary KPI Cards */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
         }
 
@@ -141,6 +141,12 @@
             font-size: 1.6rem;
             font-weight: 700;
             color: var(--text-main);
+        }
+
+        .kpi-subtext {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
         }
 
         .kpi-card.surplus .kpi-value {
@@ -194,6 +200,16 @@
         .btn-edit-budget:hover {
             border-color: var(--color-meals);
             color: var(--color-meals);
+        }
+
+        .carryover-toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
         }
 
         /* Main Grid */
@@ -286,7 +302,49 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
 
-        /* Budget Utilization Bar */
+        /* Category Budget Caps Section */
+        .cat-caps-container {
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .cat-cap-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 0.75rem;
+        }
+
+        .cat-cap-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .cat-cap-bar-track {
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .cat-cap-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .cat-cap-input-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+
+        /* Progress Bar */
         .progress-box {
             width: 100%;
             background: var(--hero-bg);
@@ -369,13 +427,19 @@
             width: 100%;
             margin-top: 1rem;
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.6rem 1rem;
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
             border-top: 1px solid var(--border-color);
             padding-top: 1rem;
         }
 
         .legend-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .legend-row-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -387,7 +451,7 @@
             align-items: center;
             gap: 6px;
             color: var(--text-main);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .legend-value {
@@ -465,12 +529,27 @@
 
         .log-form {
             display: grid;
-            grid-template-columns: 120px 1fr 140px 110px 135px 90px;
+            grid-template-columns: 120px 1fr 140px 100px 135px auto 90px;
             gap: 0.6rem;
+            align-items: center;
             margin-bottom: 1.25rem;
+            background: var(--hero-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
-        @media (max-width: 768px) {
+        .recurring-checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 900px) {
             .log-form {
                 grid-template-columns: 1fr 1fr;
             }
@@ -488,10 +567,39 @@
             cursor: pointer;
             padding: 8px 14px;
             transition: background 0.15s ease;
+            height: 36px;
         }
 
         .btn-add:hover {
             background: #1d4ed8;
+        }
+
+        .btn-cancel-edit {
+            background: var(--border-color);
+            color: var(--text-main);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+        /* Table Filter Controls */
+        .table-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 1rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-filter-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .log-table-container {
@@ -511,6 +619,12 @@
             color: var(--text-muted);
             font-size: 0.78rem;
             text-transform: uppercase;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .log-table th:hover {
+            color: var(--text-main);
         }
 
         .log-table td {
@@ -536,16 +650,33 @@
             color: #10b981;
         }
 
-        .btn-del {
+        .badge-recurring {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+            margin-left: 4px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-action {
             background: transparent;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 0.95rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: color 0.15s ease;
         }
 
-        .btn-del:hover {
+        .btn-action.edit:hover {
+            color: var(--color-meals);
+        }
+
+        .btn-action.delete:hover {
             color: var(--color-deficit);
         }
 
@@ -568,8 +699,9 @@
                 <select id="month-selector" class="select-input" aria-label="Select month to view"></select>
             </div>
             <div class="header-buttons">
-                <button class="btn-theme" onclick="exportData()" title="Download all transactions as a backup file">📥 Export</button>
-                <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore transactions from a JSON file">📤 Import</button>
+                <button class="btn-theme" onclick="exportJSON()" title="Download backup JSON file">📥 JSON Backup</button>
+                <button class="btn-theme" onclick="exportCSV()" title="Export transactions to CSV spreadsheet">📊 Export CSV</button>
+                <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore transactions from JSON">📤 Import JSON</button>
                 <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
                 <button class="btn-theme" id="theme-toggle" title="Toggle Dark/Light Mode">🌙 Dark Mode</button>
             </div>
@@ -578,16 +710,21 @@
         <!-- Top KPI Bar -->
         <div class="kpi-grid">
             <div class="kpi-card" id="kpi-target-card">
-                <span class="kpi-label">Monthly Budget</span>
+                <span class="kpi-label">Monthly Target</span>
                 <div class="kpi-budget-row">
                     <span class="kpi-value" id="kpi-budget-display">€0</span>
-                    <input type="number" id="kpi-budget-input" class="num-input budget-input" min="0" step="1" aria-label="Set monthly budget amount">
+                    <input type="number" id="kpi-budget-input" class="num-input budget-input" min="0" step="1" aria-label="Set monthly target amount">
                     <button type="button" class="btn-edit-budget" id="budget-edit-btn" title="Set monthly budget" aria-label="Set monthly budget">✎</button>
                 </div>
+                <label class="carryover-toggle-group">
+                    <input type="checkbox" id="carryover-toggle" onchange="toggleCarryover(this.checked)">
+                    <span>Roll over balance</span>
+                </label>
             </div>
             <div class="kpi-card">
                 <span class="kpi-label">Monthly Income</span>
                 <span class="kpi-value" id="kpi-income">€0</span>
+                <span class="kpi-subtext" id="kpi-carryover-subtext"></span>
             </div>
             <div class="kpi-card">
                 <span class="kpi-label">Expenses Logged</span>
@@ -613,13 +750,19 @@
                     <button type="button" class="btn-preset" onclick="quickLogTransaction('S-Market Stock Up', 'Groceries', 35)">+ S-Market Stock Up (€35)</button>
                     <button type="button" class="btn-preset" onclick="quickLogTransaction('YTHS Semester Fee', 'Fees & Health', 37)">+ YTHS Semester Fee (€37)</button>
                 </div>
+
+                <!-- Per-Category Limits Section -->
+                <div class="cat-caps-container">
+                    <h3 class="card-title" style="font-size:1rem; margin-bottom: 0.75rem;">Category Limits</h3>
+                    <div id="category-caps-list"></div>
+                </div>
             </div>
 
             <!-- Chart Card -->
             <div class="card chart-container">
                 <h2 class="card-title" style="align-self: flex-start; margin-bottom: 1rem;">Expense Breakdown</h2>
 
-                <!-- Income Utilization Progress Bar -->
+                <!-- Budget Utilization Progress Bar -->
                 <div class="progress-box">
                     <div class="progress-header">
                         <span id="progress-label">Budget Used</span>
@@ -633,7 +776,7 @@
                 <div id="warning"></div>
                 <div id="chart"></div>
 
-                <!-- Dynamic Legend -->
+                <!-- Dynamic Legend with Category Progress Bars -->
                 <div class="legend-grid" id="legend"></div>
                 <div class="tooltip" id="tooltip"></div>
             </div>
@@ -667,20 +810,43 @@
                     <select class="select-input" id="log-category" aria-label="Transaction Category"></select>
                     <input type="number" class="num-input" id="log-amount" style="width: 100%; text-align: left;" placeholder="€ Amount" step="0.01" min="0.01" required aria-label="Transaction Amount">
                     <input type="date" class="text-input" id="log-date" aria-label="Transaction Date" required>
-                    <button type="submit" class="btn-add">+ Log</button>
+                    
+                    <label class="recurring-checkbox-group" title="Auto-log this entry every month">
+                        <input type="checkbox" id="log-recurring"> Repeat
+                    </label>
+
+                    <div style="display:flex; gap: 4px;">
+                        <button type="submit" class="btn-add" id="btn-submit-log">+ Log</button>
+                        <button type="button" class="btn-cancel-edit" id="btn-cancel-edit" onclick="cancelEditMode()">Cancel</button>
+                    </div>
                 </form>
+
+                <!-- Search & Filters Bar -->
+                <div class="table-controls">
+                    <input type="text" id="table-search" class="text-input" placeholder="🔍 Search description..." oninput="renderTransactions()" style="max-width: 220px;">
+                    <div class="table-filter-group">
+                        <select id="table-type-filter" class="select-input" onchange="renderTransactions()">
+                            <option value="all">All Types</option>
+                            <option value="expense">Expenses Only</option>
+                            <option value="income">Income Only</option>
+                        </select>
+                        <select id="table-cat-filter" class="select-input" onchange="renderTransactions()">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                </div>
 
                 <!-- Transactions Table -->
                 <div class="log-table-container">
                     <table class="log-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Description</th>
-                                <th>Category</th>
-                                <th>Amount</th>
-                                <th>Action</th>
+                                <th onclick="handleSort('date')">Date <span id="sort-icon-date">▼</span></th>
+                                <th onclick="handleSort('type')">Type <span id="sort-icon-type"></span></th>
+                                <th onclick="handleSort('desc')">Description <span id="sort-icon-desc"></span></th>
+                                <th onclick="handleSort('category')">Category <span id="sort-icon-category"></span></th>
+                                <th onclick="handleSort('amount')">Amount <span id="sort-icon-amount"></span></th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="log-table-body">
@@ -698,9 +864,9 @@
         const THEME_KEY = 'lappeenranta_theme_preference';
         const TRANSACTIONS_KEY = 'lappeenranta_transactions_data';
         const BUDGETS_KEY = 'lappeenranta_budgets_data';
+        const CAT_CAPS_KEY = 'lappeenranta_cat_caps_data';
+        const CARRYOVER_KEY = 'lappeenranta_carryover_enabled';
 
-        // Single source of truth for every category: which transaction type it's
-        // valid for, and the color used consistently across the donut chart & legend.
         const categoryOptions = [
             { value: 'Groceries', label: 'Groceries', type: 'expense', color: '#10b981' },
             { value: 'Campus Meals', label: 'Campus Meals', type: 'expense', color: '#3b82f6' },
@@ -714,9 +880,15 @@
 
         let transactions = [];
         let budgets = {}; // { "YYYY-MM": amount }
+        let categoryCaps = {}; // { "Groceries": 150, ... }
         let currentMonthKey = getCurrentMonthKey();
+        let editingTransactionId = null;
+        let carryoverEnabled = false;
 
-        // Helper: Local Date Format (YYYY-MM-DD) avoiding UTC offsets
+        // Table Sorting State
+        let sortField = 'date';
+        let sortAsc = false;
+
         function getLocalDateString() {
             const today = new Date();
             const year = today.getFullYear();
@@ -733,6 +905,14 @@
             return (typeof dateStr === 'string' && /^\d{4}-\d{2}/.test(dateStr)) ? dateStr.slice(0, 7) : getCurrentMonthKey();
         }
 
+        function getPreviousMonthKey(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            const prevDate = new Date(y, m - 2, 1);
+            const prevY = prevDate.getFullYear();
+            const prevM = String(prevDate.getMonth() + 1).padStart(2, '0');
+            return `${prevY}-${prevM}`;
+        }
+
         function formatMonthLabel(monthKey) {
             const [y, m] = monthKey.split('-').map(Number);
             return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -747,7 +927,6 @@
             return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
         }
 
-        // Format currency helper
         function formatMoney(val) {
             return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
         }
@@ -758,7 +937,7 @@
             });
         }
 
-        // D3 Donut Chart Dimensions
+        // D3 Donut Chart Setup
         const width = 260;
         const height = 260;
         const margin = 10;
@@ -797,9 +976,8 @@
         const arcHover = d3.arc().innerRadius(innerRadius).outerRadius(radius + 6);
         const tooltip = d3.select("#tooltip");
 
-        // Dark Theme Switcher Logic
+        // Theme Toggle
         const themeBtn = document.getElementById('theme-toggle');
-
         function initTheme() {
             const savedTheme = localStorage.getItem(THEME_KEY);
             if (savedTheme === 'dark') {
@@ -815,12 +993,11 @@
             localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
         });
 
-        // Highlight input text on focus
         document.querySelectorAll('.num-input').forEach(input => {
             input.addEventListener('focus', (e) => e.target.select());
         });
 
-        // Monthly Budget: inline edit control on the KPI card
+        // Monthly Budget Logic
         const budgetDisplay = document.getElementById('kpi-budget-display');
         const budgetInputEl = document.getElementById('kpi-budget-input');
         const budgetEditBtn = document.getElementById('budget-edit-btn');
@@ -844,21 +1021,19 @@
         }
 
         budgetEditBtn.addEventListener('click', enterBudgetEditMode);
-
         budgetInputEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                exitBudgetEditMode(true);
-            } else if (e.key === 'Escape') {
-                exitBudgetEditMode(false);
-            }
+            if (e.key === 'Enter') { e.preventDefault(); exitBudgetEditMode(true); }
+            else if (e.key === 'Escape') { exitBudgetEditMode(false); }
         });
-
         budgetInputEl.addEventListener('blur', () => exitBudgetEditMode(true));
 
-        // Repopulate the category dropdown to only show options valid for the
-        // currently selected transaction type, so a mismatched combo (e.g. an
-        // "Expense" logged against the "Income" category) can never be selected.
+        function toggleCarryover(enabled) {
+            carryoverEnabled = enabled;
+            localStorage.setItem(CARRYOVER_KEY, enabled ? 'true' : 'false');
+            updateChart();
+        }
+
+        // Category Select Dropdown Population
         function updateCategoryOptions() {
             const type = document.getElementById('log-type').value;
             const categorySelect = document.getElementById('log-category');
@@ -866,15 +1041,20 @@
             const options = categoryOptions.filter(c => c.type === type);
 
             categorySelect.innerHTML = options.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
-
             if (options.some(c => c.value === previousValue)) {
                 categorySelect.value = previousValue;
             }
+
+            // Also populate table filter dropdown
+            const catFilter = document.getElementById('table-cat-filter');
+            const expOptions = categoryOptions.filter(c => c.type === 'expense');
+            catFilter.innerHTML = '<option value="all">All Categories</option>' +
+                expOptions.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
         }
 
         document.getElementById('log-type').addEventListener('change', updateCategoryOptions);
 
-        // MONTH SELECTOR LOGIC
+        // Month Selector
         function getAvailableMonths() {
             const set = new Set(transactions.map(t => getMonthKeyFromDate(t.date)));
             set.add(getCurrentMonthKey());
@@ -893,16 +1073,18 @@
 
         document.getElementById('month-selector').addEventListener('change', function() {
             currentMonthKey = this.value;
+            checkAndApplyRecurring();
             renderAll();
         });
 
         function renderAll() {
+            renderCategoryCaps();
             renderTransactions();
             updateChart();
             renderTrends();
         }
 
-        // TRANSACTION & LOG MANAGER LOGIC
+        // Storage Load / Save
         function loadTransactions() {
             const saved = localStorage.getItem(TRANSACTIONS_KEY);
             if (saved) {
@@ -912,7 +1094,7 @@
                     transactions.forEach(t => {
                         if (!t.id) { t.id = generateId(); backfilled = true; }
                     });
-                    if (backfilled) localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
+                    if (backfilled) saveTransactions();
                 } catch (e) {
                     console.error("Error loading transactions:", e);
                     transactions = [];
@@ -924,24 +1106,28 @@
             localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
         }
 
-        // BUDGET PLANNING: a separate, explicitly-set target per month, distinct
-        // from actual income logged. This is what "Income Used" / surplus should
-        // be measured against once the user has planned a budget for the month.
         function loadBudgets() {
             const saved = localStorage.getItem(BUDGETS_KEY);
             if (saved) {
                 try {
-                    const parsed = JSON.parse(saved);
-                    budgets = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
-                } catch (e) {
-                    console.error("Error loading budgets:", e);
-                    budgets = {};
-                }
+                    budgets = JSON.parse(saved) || {};
+                } catch (e) { budgets = {}; }
             }
         }
 
         function saveBudgets() {
             localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
+        }
+
+        function loadCategoryCaps() {
+            const saved = localStorage.getItem(CAT_CAPS_KEY);
+            if (saved) {
+                try { categoryCaps = JSON.parse(saved) || {}; } catch(e) { categoryCaps = {}; }
+            }
+        }
+
+        function saveCategoryCaps() {
+            localStorage.setItem(CAT_CAPS_KEY, JSON.stringify(categoryCaps));
         }
 
         function getBudgetForMonth(monthKey) {
@@ -950,9 +1136,103 @@
         }
 
         function setBudgetForMonth(monthKey, value) {
-            const clean = (isFinite(value) && value >= 0) ? Math.round(value * 100) / 100 : 0;
-            budgets[monthKey] = clean;
+            budgets[monthKey] = (isFinite(value) && value >= 0) ? Math.round(value * 100) / 100 : 0;
             saveBudgets();
+        }
+
+        // RECURRING TRANSACTIONS ENGINE
+        function checkAndApplyRecurring() {
+            // Find all unique recurring items from past transactions
+            const recurringTemplates = transactions.filter(t => t.recurring === true);
+            const uniqueTemplates = [];
+            
+            recurringTemplates.forEach(t => {
+                const key = `${t.desc.toLowerCase()}_${t.category}_${t.type}_${t.amount}`;
+                if (!uniqueTemplates.some(u => `${u.desc.toLowerCase()}_${u.category}_${u.type}_${u.amount}` === key)) {
+                    uniqueTemplates.push(t);
+                }
+            });
+
+            let addedNew = false;
+            uniqueTemplates.forEach(tmpl => {
+                const existsInCurrentMonth = transactions.some(t => 
+                    getMonthKeyFromDate(t.date) === currentMonthKey &&
+                    t.desc.toLowerCase() === tmpl.desc.toLowerCase() &&
+                    t.category === tmpl.category &&
+                    t.amount === tmpl.amount
+                );
+
+                if (!existsInCurrentMonth) {
+                    const newEntry = {
+                        id: generateId(),
+                        date: `${currentMonthKey}-01`,
+                        type: tmpl.type,
+                        desc: tmpl.desc,
+                        category: tmpl.category,
+                        amount: tmpl.amount,
+                        recurring: true
+                    };
+                    transactions.unshift(newEntry);
+                    addedNew = true;
+                }
+            });
+
+            if (addedNew) saveTransactions();
+        }
+
+        // CATEGORY BUDGET CAPS UI
+        function renderCategoryCaps() {
+            const container = document.getElementById('category-caps-list');
+            container.innerHTML = '';
+
+            const expCategories = categoryOptions.filter(c => c.type === 'expense');
+            expCategories.forEach(cat => {
+                const capVal = categoryCaps[cat.value] || 0;
+                const div = document.createElement('div');
+                div.className = 'cat-cap-item';
+                div.innerHTML = `
+                    <div class="cat-cap-header">
+                        <span><span class="color-dot" style="background:${cat.color}"></span> ${cat.label}</span>
+                        <div class="cat-cap-input-row">
+                            <span>Cap: €</span>
+                            <input type="number" class="num-input" style="width:65px; padding:2px 4px; font-size:0.78rem;" 
+                                value="${capVal || ''}" placeholder="None" min="0" 
+                                onchange="setCategoryCap('${cat.value}', this.value)">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function setCategoryCap(category, value) {
+            const num = parseFloat(value);
+            if (isNaN(num) || num <= 0) {
+                delete categoryCaps[category];
+            } else {
+                categoryCaps[category] = Math.round(num * 100) / 100;
+            }
+            saveCategoryCaps();
+            updateChart();
+        }
+
+        // TABLE SORTING & RENDERING
+        function handleSort(field) {
+            if (sortField === field) {
+                sortAsc = !sortAsc;
+            } else {
+                sortField = field;
+                sortAsc = true;
+            }
+            updateSortIcons();
+            renderTransactions();
+        }
+
+        function updateSortIcons() {
+            ['date', 'type', 'desc', 'category', 'amount'].forEach(f => {
+                const el = document.getElementById(`sort-icon-${f}`);
+                if (el) el.textContent = (f === sortField) ? (sortAsc ? '▲' : '▼') : '';
+            });
         }
 
         function renderTransactions() {
@@ -960,10 +1240,37 @@
             const emptyMsg = document.getElementById('empty-log-msg');
             tbody.innerHTML = '';
 
-            const monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
+            const searchTerm = document.getElementById('table-search').value.toLowerCase().trim();
+            const typeFilter = document.getElementById('table-type-filter').value;
+            const catFilter = document.getElementById('table-cat-filter').value;
+
+            let monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
+
+            // Apply Filters
+            if (searchTerm) {
+                monthTransactions = monthTransactions.filter(t => t.desc.toLowerCase().includes(searchTerm));
+            }
+            if (typeFilter !== 'all') {
+                monthTransactions = monthTransactions.filter(t => t.type === typeFilter);
+            }
+            if (catFilter !== 'all') {
+                monthTransactions = monthTransactions.filter(t => t.category === catFilter);
+            }
+
+            // Apply Sorting
+            monthTransactions.sort((a, b) => {
+                let valA = a[sortField];
+                let valB = b[sortField];
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
 
             if (monthTransactions.length === 0) {
-                emptyMsg.textContent = `No transactions logged for ${formatMonthLabel(currentMonthKey)} yet. Add your first expense or income above!`;
+                emptyMsg.textContent = `No matching transactions found for ${formatMonthLabel(currentMonthKey)}.`;
                 emptyMsg.style.display = 'block';
                 return;
             }
@@ -978,27 +1285,26 @@
                 const safeDate = escapeHtml(String(item.date));
                 const categoryDef = categoryOptions.find(c => c.value === item.category);
                 const safeCategory = escapeHtml(categoryDef ? categoryDef.label : String(item.category));
+                const recurringBadge = item.recurring ? `<span class="badge badge-recurring">↺ Monthly</span>` : '';
 
                 tr.innerHTML = `
                     <td>${safeDate}</td>
                     <td><span class="badge ${badgeClass}">${item.type.toUpperCase()}</span></td>
-                    <td><strong>${safeDesc}</strong></td>
+                    <td><strong>${safeDesc}</strong>${recurringBadge}</td>
                     <td>${safeCategory}</td>
                     <td style="font-weight:700;">${amountPrefix}${parseFloat(item.amount).toFixed(2)}</td>
-                    <td><button class="btn-del" data-id="${escapeHtml(String(item.id))}" aria-label="Delete entry: ${safeDesc}" title="Delete entry">&times;</button></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-action edit" onclick="startEditTransaction('${escapeHtml(String(item.id))}')" title="Edit entry">✏️</button>
+                            <button class="btn-action delete" onclick="deleteTransaction('${escapeHtml(String(item.id))}')" title="Delete entry">&times;</button>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // Event delegation for delete buttons: avoids ever building an inline
-        // onclick string out of transaction data (which is how the previous
-        // version could be broken by a crafted id from an imported file).
-        document.getElementById('log-table-body').addEventListener('click', function(e) {
-            const btn = e.target.closest('.btn-del');
-            if (btn) deleteTransaction(btn.dataset.id);
-        });
-
+        // ADD / EDIT FORM HANDLING
         document.getElementById('log-form').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -1007,20 +1313,24 @@
             const category = document.getElementById('log-category').value;
             const amount = parseFloat(document.getElementById('log-amount').value);
             const dateInput = document.getElementById('log-date').value;
+            const recurring = document.getElementById('log-recurring').checked;
             const date = /^\d{4}-\d{2}-\d{2}$/.test(dateInput) ? dateInput : getLocalDateString();
 
             if (!desc || isNaN(amount) || amount <= 0) return;
 
-            const newEntry = {
-                id: generateId(),
-                date,
-                type,
-                desc,
-                category,
-                amount
-            };
+            if (editingTransactionId) {
+                // Update existing
+                const idx = transactions.findIndex(t => t.id === editingTransactionId);
+                if (idx !== -1) {
+                    transactions[idx] = { id: editingTransactionId, date, type, desc, category, amount, recurring };
+                }
+                cancelEditMode();
+            } else {
+                // Add new
+                const newEntry = { id: generateId(), date, type, desc, category, amount, recurring };
+                transactions.unshift(newEntry);
+            }
 
-            transactions.unshift(newEntry);
             saveTransactions();
             currentMonthKey = getMonthKeyFromDate(date);
             renderMonthSelector();
@@ -1028,17 +1338,52 @@
 
             document.getElementById('log-desc').value = '';
             document.getElementById('log-amount').value = '';
+            document.getElementById('log-recurring').checked = false;
             document.getElementById('log-date').value = getLocalDateString();
         });
 
+        function startEditTransaction(id) {
+            const item = transactions.find(t => t.id === id);
+            if (!item) return;
+
+            editingTransactionId = id;
+            document.getElementById('log-type').value = item.type;
+            updateCategoryOptions();
+            document.getElementById('log-desc').value = item.desc;
+            document.getElementById('log-category').value = item.category;
+            document.getElementById('log-amount').value = item.amount;
+            document.getElementById('log-date').value = item.date;
+            document.getElementById('log-recurring').checked = !!item.recurring;
+
+            document.getElementById('btn-submit-log').textContent = '💾 Save';
+            document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+            document.getElementById('log-desc').focus();
+        }
+
+        function cancelEditMode() {
+            editingTransactionId = null;
+            document.getElementById('btn-submit-log').textContent = '+ Log';
+            document.getElementById('btn-cancel-edit').style.display = 'none';
+            document.getElementById('log-desc').value = '';
+            document.getElementById('log-amount').value = '';
+            document.getElementById('log-recurring').checked = false;
+            document.getElementById('log-date').value = getLocalDateString();
+        }
+
         function deleteTransaction(id) {
+            const item = transactions.find(t => t.id === id);
+            const descName = item ? item.desc : 'this entry';
+            
+            if (!confirm(`Are you sure you want to delete "${descName}"?`)) {
+                return;
+            }
+
             transactions = transactions.filter(t => t.id !== id);
             saveTransactions();
             renderMonthSelector();
             renderAll();
         }
 
-        // Quick Add: logs a transaction directly, no manual form needed
         function quickLogTransaction(desc, category, amount) {
             const newEntry = {
                 id: generateId(),
@@ -1046,7 +1391,8 @@
                 type: 'expense',
                 desc,
                 category,
-                amount
+                amount,
+                recurring: false
             };
 
             transactions.unshift(newEntry);
@@ -1056,53 +1402,74 @@
             renderAll();
         }
 
-        // Export Transactions to a JSON file
-        function exportData() {
+        // EXPORT & IMPORT (JSON & CSV)
+        function exportJSON() {
             const exportObj = {
-                version: "2.1",
+                version: "2.2",
                 exportedAt: new Date().toISOString(),
                 transactions,
-                budgets
+                budgets,
+                categoryCaps
             };
 
             const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
             const blobUrl = URL.createObjectURL(blob);
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", blobUrl);
-            downloadAnchor.setAttribute("download", `lappeenranta_budget_backup_${getLocalDateString()}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            const anchor = document.createElement('a');
+            anchor.setAttribute("href", blobUrl);
+            anchor.setAttribute("download", `lappeenranta_budget_backup_${getLocalDateString()}.json`);
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
             URL.revokeObjectURL(blobUrl);
         }
 
-        // Validate & clean a single imported transaction record. Returns null
-        // if the record is malformed or has values outside the app's known
-        // set (this is what protects against a crafted/malicious import file).
+        function exportCSV() {
+            if (transactions.length === 0) {
+                alert("No transactions available to export.");
+                return;
+            }
+
+            const headers = ["ID", "Date", "Type", "Description", "Category", "Amount (€)", "Recurring"];
+            const rows = transactions.map(t => [
+                `"${t.id}"`,
+                `"${t.date}"`,
+                `"${t.type}"`,
+                `"${t.desc.replace(/"/g, '""')}"`,
+                `"${t.category}"`,
+                t.amount,
+                t.recurring ? "Yes" : "No"
+            ]);
+
+            const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const blobUrl = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.setAttribute("href", blobUrl);
+            anchor.setAttribute("download", `lappeenranta_transactions_${getLocalDateString()}.csv`);
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(blobUrl);
+        }
+
         function sanitizeTransaction(item) {
             if (!item || typeof item !== 'object') return null;
 
             const type = (item.type === 'income' || item.type === 'expense') ? item.type : null;
             const category = validCategoryValues.includes(item.category) ? item.category : null;
             const amount = Math.round(parseFloat(item.amount) * 100) / 100;
-            const date = (typeof item.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date))
-                ? item.date
-                : getLocalDateString();
+            const date = (typeof item.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date)) ? item.date : getLocalDateString();
             const desc = typeof item.desc === 'string' ? item.desc.slice(0, 200) : '';
-            // Always regenerate the id rather than trusting the file's value —
-            // an imported id is never used for anything except identifying the
-            // row for deletion, so there's no reason to accept arbitrary
-            // attacker-controlled content here.
-            const id = generateId();
+            const recurring = !!item.recurring;
+            const id = (typeof item.id === 'string' && item.id.length > 0) ? item.id : generateId();
 
             if (!type || !category || !isFinite(amount) || amount <= 0) return null;
             const categoryDef = categoryOptions.find(c => c.value === category);
             if (!categoryDef || categoryDef.type !== type) return null;
 
-            return { id, date, type, desc, category, amount };
+            return { id, date, type, desc, category, amount, recurring };
         }
 
-        // Import Transactions from a JSON file
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1117,46 +1484,64 @@
                     }
 
                     const cleaned = importedObj.transactions.map(sanitizeTransaction).filter(t => t !== null);
-                    const skipped = importedObj.transactions.length - cleaned.length;
 
-                    transactions = cleaned;
-                    saveTransactions();
+                    const shouldMerge = confirm(
+                        "How would you like to handle existing data?\n\n" +
+                        "• Click OK to MERGE imported data with current transactions (skips exact duplicates).\n" +
+                        "• Click CANCEL to OVERWRITE and replace all current data."
+                    );
 
-                    // Budgets are optional in older backup files; validate each
-                    // entry the same way sanitizeTransaction validates amounts.
-                    if (importedObj.budgets && typeof importedObj.budgets === 'object' && !Array.isArray(importedObj.budgets)) {
-                        const cleanBudgets = {};
-                        Object.keys(importedObj.budgets).forEach(monthKey => {
-                            if (/^\d{4}-\d{2}$/.test(monthKey)) {
-                                const val = parseFloat(importedObj.budgets[monthKey]);
-                                if (isFinite(val) && val >= 0) {
-                                    cleanBudgets[monthKey] = Math.round(val * 100) / 100;
-                                }
+                    if (shouldMerge) {
+                        let addedCount = 0;
+                        cleaned.forEach(newItem => {
+                            if (!transactions.some(t => t.id === newItem.id)) {
+                                transactions.push(newItem);
+                                addedCount++;
                             }
                         });
-                        budgets = cleanBudgets;
+                        alert(`Merge complete! Added ${addedCount} new transactions.`);
+                    } else {
+                        transactions = cleaned;
+                        alert("Overwrite complete! Transactions replaced.");
+                    }
+
+                    saveTransactions();
+
+                    if (importedObj.budgets && typeof importedObj.budgets === 'object') {
+                        budgets = { ...budgets, ...importedObj.budgets };
                         saveBudgets();
+                    }
+                    if (importedObj.categoryCaps && typeof importedObj.categoryCaps === 'object') {
+                        categoryCaps = { ...categoryCaps, ...importedObj.categoryCaps };
+                        saveCategoryCaps();
                     }
 
                     currentMonthKey = getCurrentMonthKey();
                     renderMonthSelector();
                     renderAll();
-
-                    alert(skipped > 0
-                        ? `Import complete. ${skipped} invalid transaction(s) were skipped.`
-                        : "Transactions imported successfully!");
                 } catch (err) {
-                    alert("Failed to import: Please ensure you selected a valid budget JSON file.");
+                    alert("Failed to import: Please ensure you selected a valid JSON backup file.");
                     console.error("Import error:", err);
                 }
             };
             reader.readAsText(file);
-
             event.target.value = '';
         }
 
-        // Core Chart & KPI Rendering Function — computed entirely from the
-        // transaction log for the currently selected month.
+        // CARRYOVER CALCULATION
+        function calculatePreviousCarryover(monthKey) {
+            const prevKey = getPreviousMonthKey(monthKey);
+            const prevTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === prevKey);
+            if (prevTransactions.length === 0) return 0;
+
+            const prevIncome = prevTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const prevBudget = getBudgetForMonth(prevKey) || prevIncome;
+            const prevExpenses = prevTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+            return Math.round((prevBudget - prevExpenses) * 100) / 100;
+        }
+
+        // CHART & KPI UPDATE
         function updateChart() {
             const monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
 
@@ -1165,11 +1550,25 @@
             ) / 100;
 
             const targetBudget = getBudgetForMonth(currentMonthKey);
-            // Plan against the budget the user explicitly set for this month; if
-            // they haven't set one yet, fall back to logged income so the app is
-            // still useful before a budget has been entered.
-            const planningBudget = targetBudget > 0 ? targetBudget : incomeTotal;
+            let planningBudget = targetBudget > 0 ? targetBudget : incomeTotal;
             const usingFallbackBudget = targetBudget <= 0;
+
+            // Carryover Calculation
+            let carryoverAmount = 0;
+            const carryoverSubtext = document.getElementById('kpi-carryover-subtext');
+            
+            if (carryoverEnabled) {
+                carryoverAmount = calculatePreviousCarryover(currentMonthKey);
+                planningBudget += carryoverAmount;
+                if (carryoverAmount !== 0) {
+                    const sign = carryoverAmount > 0 ? '+' : '';
+                    carryoverSubtext.textContent = `(${sign}€${formatMoney(carryoverAmount)} roll-over)`;
+                } else {
+                    carryoverSubtext.textContent = '';
+                }
+            } else {
+                carryoverSubtext.textContent = '';
+            }
 
             let data = categoryOptions.filter(c => c.type === 'expense').map(c => ({
                 category: c.value,
@@ -1210,10 +1609,6 @@
                 warningEl.style.display = "none";
             }
 
-            // Keep this numeric until the very last moment — comparing the
-            // .toFixed() string against 100/85 below would coerce back to a
-            // number anyway, but formatting early invites exactly that kind
-            // of subtle bug if the thresholds ever change.
             const usedPercentageNum = planningBudget > 0 ? (totalExpenses / planningBudget) * 100 : 0;
             const usedPercentage = usedPercentageNum.toFixed(1);
             const progressBar = document.getElementById('progress-bar');
@@ -1238,7 +1633,7 @@
                 emptyRing.attr("d", arc({ startAngle: 0, endAngle: 2 * Math.PI })).style("display", "block");
                 svg.selectAll("path.slice").remove();
                 svg.selectAll(".slice-label").remove();
-                document.getElementById('legend').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size:0.85rem;">No expenses logged for this month yet</div>';
+                document.getElementById('legend').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size:0.85rem;">No expenses logged for this month yet</div>';
                 return;
             } else {
                 emptyRing.style("display", "none");
@@ -1246,9 +1641,7 @@
 
             const pieData = pie(data);
 
-            const paths = svg.selectAll("path.slice")
-                .data(pieData, d => d.data.category);
-
+            const paths = svg.selectAll("path.slice").data(pieData, d => d.data.category);
             paths.exit().remove();
 
             const newPaths = paths.enter()
@@ -1258,40 +1651,28 @@
                 .attr("stroke", "var(--card-bg)")
                 .style("stroke-width", "2px")
                 .on("mouseover", function(event, d) {
-                    d3.select(this)
-                      .transition().duration(150)
-                      .attr("d", arcHover);
-
+                    d3.select(this).transition().duration(150).attr("d", arcHover);
                     const pct = ((d.data.value / totalExpenses) * 100).toFixed(1);
                     tooltip.style("opacity", 1)
                            .html(`<strong>${d.data.label}</strong><br>€${formatMoney(d.data.value)} (${pct}% of spent)`);
                 })
                 .on("mousemove", function(event) {
                     const [x, y] = d3.pointer(event, document.querySelector('.chart-container'));
-                    tooltip.style("left", (x + 15) + "px")
-                           .style("top", (y - 10) + "px");
+                    tooltip.style("left", (x + 15) + "px").style("top", (y - 10) + "px");
                 })
                 .on("mouseleave", function() {
-                    d3.select(this)
-                      .transition().duration(150)
-                      .attr("d", arc);
-
+                    d3.select(this).transition().duration(150).attr("d", arc);
                     tooltip.style("opacity", 0);
                 });
 
-            paths.merge(newPaths)
-                .transition().duration(400)
+            paths.merge(newPaths).transition().duration(400)
                 .attrTween("d", function(d) {
                     const interpolate = d3.interpolate(this._current || d, d);
                     this._current = interpolate(1);
-                    return function(t) {
-                        return arc(interpolate(t));
-                    };
+                    return function(t) { return arc(interpolate(t)); };
                 });
 
-            const labels = svg.selectAll(".slice-label")
-                .data(pieData, d => d.data.category);
-
+            const labels = svg.selectAll(".slice-label").data(pieData, d => d.data.category);
             labels.exit().remove();
 
             const newLabels = labels.enter()
@@ -1304,36 +1685,53 @@
                 .style("font-weight", "700")
                 .style("pointer-events", "none");
 
-            labels.merge(newLabels)
-                .transition().duration(400)
-                .attr("transform", function(d) {
-                    return `translate(${arc.centroid(d)})`;
-                })
+            labels.merge(newLabels).transition().duration(400)
+                .attr("transform", d => `translate(${arc.centroid(d)})`)
                 .text(d => {
                     const pct = (d.data.value / totalExpenses) * 100;
                     return pct >= 6 ? `${Math.round(pct)}%` : '';
                 });
 
+            // Legend Rendering with Per-Category Limits Progress Bars
             const legendEl = document.getElementById('legend');
             legendEl.innerHTML = '';
 
             data.forEach(item => {
                 const pct = ((item.value / totalExpenses) * 100).toFixed(1);
+                const capVal = categoryCaps[item.category] || 0;
+                let capBarHtml = '';
+
+                if (capVal > 0) {
+                    const catPct = Math.min((item.value / capVal) * 100, 100).toFixed(0);
+                    const barColor = item.value > capVal ? 'var(--color-deficit)' : item.color;
+                    capBarHtml = `
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; display:flex; justify-between;">
+                            <span>€${formatMoney(item.value)} / €${formatMoney(capVal)} cap</span>
+                            <span>${catPct}%</span>
+                        </div>
+                        <div class="cat-cap-bar-track">
+                            <div class="cat-cap-bar-fill" style="width:${catPct}%; background-color:${barColor};"></div>
+                        </div>
+                    `;
+                }
+
                 const legendItem = document.createElement('div');
                 legendItem.className = 'legend-item';
                 legendItem.innerHTML = `
-                    <div class="legend-label-group">
-                        <span class="color-dot" aria-hidden="true" style="background-color: ${item.color};"></span>
-                        <span>${item.label}</span>
+                    <div class="legend-row-top">
+                        <div class="legend-label-group">
+                            <span class="color-dot" aria-hidden="true" style="background-color: ${item.color};"></span>
+                            <span>${item.label}</span>
+                        </div>
+                        <span class="legend-value">€${formatMoney(item.value)} (${pct}%)</span>
                     </div>
-                    <span class="legend-value">€${formatMoney(item.value)} (${pct}%)</span>
+                    ${capBarHtml}
                 `;
                 legendEl.appendChild(legendItem);
             });
         }
 
-        // Monthly Trends: grouped bar chart comparing income vs expenses
-        // across every month present in the transaction log.
+        // MONTHLY TRENDS BAR CHART
         function renderTrends() {
             const monthTotals = {};
             transactions.forEach(t => {
@@ -1363,20 +1761,10 @@
             const g = trendsSvg.append('g')
                 .attr('transform', `translate(${chartMargin.left},${chartMargin.top})`);
 
-            const x0 = d3.scaleBand()
-                .domain(chartData.map(d => d.label))
-                .range([0, chartWidth])
-                .paddingInner(0.35);
-
-            const x1 = d3.scaleBand()
-                .domain(['income', 'expense'])
-                .range([0, x0.bandwidth()])
-                .padding(0.12);
-
+            const x0 = d3.scaleBand().domain(chartData.map(d => d.label)).range([0, chartWidth]).paddingInner(0.35);
+            const x1 = d3.scaleBand().domain(['income', 'expense']).range([0, x0.bandwidth()]).padding(0.12);
             const maxVal = d3.max(chartData, d => Math.max(d.income, d.expense)) || 10;
-            const y = d3.scaleLinear()
-                .domain([0, maxVal * 1.15])
-                .range([chartHeight, 0]);
+            const y = d3.scaleLinear().domain([0, maxVal * 1.15]).range([chartHeight, 0]);
 
             g.append('g')
                 .attr('class', 'axis x-axis')
@@ -1392,8 +1780,7 @@
 
             const monthGroups = g.selectAll('.month-group')
                 .data(chartData)
-                .enter()
-                .append('g')
+                .enter().append('g')
                 .attr('class', 'month-group')
                 .attr('transform', d => `translate(${x0(d.label)},0)`);
 
@@ -1409,6 +1796,7 @@
                     .on('click', function(event, d) {
                         currentMonthKey = d.month;
                         renderMonthSelector();
+                        checkAndApplyRecurring();
                         renderAll();
                     })
                     .on('mouseover', function(event, d) {
@@ -1417,28 +1805,30 @@
                     })
                     .on('mousemove', function(event) {
                         const [x, y2] = d3.pointer(event, document.querySelector('.trends-card'));
-                        tooltip.style('left', (x + 15) + 'px')
-                               .style('top', (y2 - 10) + 'px');
+                        tooltip.style('left', (x + 15) + 'px').style('top', (y2 - 10) + 'px');
                     })
-                    .on('mouseleave', function() {
-                        tooltip.style('opacity', 0);
-                    });
+                    .on('mouseleave', function() { tooltip.style('opacity', 0); });
             });
         }
 
-        // Initialize App
+        // INITIALIZE APP
         initTheme();
         updateCategoryOptions();
         loadTransactions();
         loadBudgets();
+        loadCategoryCaps();
+
+        carryoverEnabled = localStorage.getItem(CARRYOVER_KEY) === 'true';
+        document.getElementById('carryover-toggle').checked = carryoverEnabled;
+
         document.getElementById('log-date').value = getLocalDateString();
 
-        // Ensure currentMonthKey points to the latest month with data if available
         if (transactions.length > 0) {
             const availableMonths = Array.from(new Set(transactions.map(t => getMonthKeyFromDate(t.date)))).sort().reverse();
             currentMonthKey = availableMonths[0];
         }
 
+        checkAndApplyRecurring();
         renderMonthSelector();
         renderAll();
     </script>

@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Budget Tracker">
+    <meta name="theme-color" content="#2563eb">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lappeenranta Student Budget & Tracker</title>
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/wallet.png">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Lappeenranta%20Student%20Budget%20%26%20Tracker%22%2C%22short_name%22%3A%22Budget%20Tracker%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A//img.icons8.com/color/192/wallet.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%7D%2C%7B%22src%22%3A%22https%3A//img.icons8.com/color/512/wallet.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%7D%5D%7D">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         :root {
@@ -692,11 +695,19 @@
 
     <div class="dashboard-container">
 
-        <!-- Top Bar: Month Selector + Actions -->
+        <!-- Top Bar: View Mode + Period Selector + Actions -->
         <div class="top-header-actions">
             <div class="month-select-group">
+                <label for="view-mode-selector" class="month-select-label">View</label>
+                <select id="view-mode-selector" class="select-input" aria-label="Select view mode">
+                    <option value="month">Month</option>
+                    <option value="semester">Semester</option>
+                    <option value="year">Year</option>
+                </select>
+            </div>
+            <div class="month-select-group">
                 <label for="month-selector" class="month-select-label">Viewing</label>
-                <select id="month-selector" class="select-input" aria-label="Select month to view"></select>
+                <select id="month-selector" class="select-input" aria-label="Select period to view"></select>
             </div>
             <div class="header-buttons">
                 <button class="btn-theme" onclick="exportJSON()" title="Download backup JSON file">📥 JSON Backup</button>
@@ -710,7 +721,7 @@
         <!-- Top KPI Bar -->
         <div class="kpi-grid">
             <div class="kpi-card" id="kpi-target-card">
-                <span class="kpi-label">Monthly Target</span>
+                <span class="kpi-label" id="kpi-target-label">Monthly Target</span>
                 <div class="kpi-budget-row">
                     <span class="kpi-value" id="kpi-budget-display">€0</span>
                     <input type="number" id="kpi-budget-input" class="num-input budget-input" min="0" step="1" aria-label="Set monthly target amount">
@@ -722,7 +733,7 @@
                 </label>
             </div>
             <div class="kpi-card">
-                <span class="kpi-label">Monthly Income</span>
+                <span class="kpi-label" id="kpi-income-label">Monthly Income</span>
                 <span class="kpi-value" id="kpi-income">€0</span>
                 <span class="kpi-subtext" id="kpi-carryover-subtext"></span>
             </div>
@@ -781,6 +792,25 @@
                 <div class="tooltip" id="tooltip"></div>
             </div>
 
+            <!-- Savings Goals -->
+            <div class="card goals-card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <h2 class="card-title">Savings Goals</h2>
+                    <button type="button" class="btn-theme" id="goal-new-btn" onclick="openNewGoalForm()">+ New Goal</button>
+                </div>
+                <div id="goal-form-container" style="display:none; margin-bottom: 1.25rem; background: var(--hero-bg); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center;">
+                        <input type="text" class="text-input" id="goal-name-input" placeholder="Goal name (e.g. Trip to Tallinn)" style="flex:1; min-width:180px;">
+                        <input type="number" class="num-input" id="goal-target-input" style="width:110px; text-align:left;" placeholder="Target €" min="1" step="0.01">
+                        <input type="date" class="text-input" id="goal-deadline-input" aria-label="Target date (optional)" title="Target date (optional)">
+                        <button type="button" class="btn-add" onclick="saveGoalForm()">Save Goal</button>
+                        <button type="button" class="btn-cancel-edit" style="display:inline-block;" onclick="closeGoalForm()">Cancel</button>
+                    </div>
+                </div>
+                <div id="goals-list"></div>
+                <div id="goals-empty-msg" class="empty-log" style="display:none;">No savings goals yet. Add one to start tracking progress toward something specific.</div>
+            </div>
+
             <!-- Monthly Trends -->
             <div class="card trends-card">
                 <div class="card-header">
@@ -790,7 +820,7 @@
                         <span class="trend-legend-item"><span class="color-dot" style="background-color:#3b82f6;"></span> Expenses</span>
                     </div>
                 </div>
-                <p class="trend-hint">Click a bar to jump to that month.</p>
+                <p class="trend-hint">Click a bar to jump to that month. Showing the last 3 months.</p>
                 <svg id="trends-chart" viewBox="0 0 600 260" preserveAspectRatio="xMidYMid meet"></svg>
             </div>
 
@@ -833,6 +863,7 @@
                         <select id="table-cat-filter" class="select-input" onchange="renderTransactions()">
                             <option value="all">All Categories</option>
                         </select>
+                        <button type="button" class="btn-theme" onclick="resetTableFilters()" title="Clear search and filters">Reset</button>
                     </div>
                 </div>
 
@@ -867,6 +898,8 @@
         const CAT_CAPS_KEY = 'lappeenranta_cat_caps_data';
         const CARRYOVER_KEY = 'lappeenranta_carryover_enabled';
         const RECURRING_TEMPLATES_KEY = 'lappeenranta_recurring_templates_data';
+        const SAVINGS_GOALS_KEY = 'lappeenranta_savings_goals_data';
+        const GOAL_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
         const categoryOptions = [
             { value: 'Groceries', label: 'Groceries', type: 'expense', color: '#10b981' },
@@ -884,9 +917,20 @@
         let categoryCaps = {}; // { "Groceries": 150, ... }
         // { id, desc, category, type, amount, startMonth, endMonth (null = ongoing), skipMonths: [] }
         let recurringTemplates = [];
+        // { id, name, target, saved, deadline (YYYY-MM-DD or null), color }
+        let savingsGoals = [];
+        let editingGoalId = null;
         let currentMonthKey = getCurrentMonthKey();
         let editingTransactionId = null;
         let carryoverEnabled = false;
+
+        // View mode drives whether the dashboard shows one month, one semester,
+        // or one calendar year. currentMonthKey (above) stays the "month" the
+        // rest of the app anchors to (recurring engine, budget editing, quick-add
+        // defaults); currentPeriodKey is what's actually displayed and can be a
+        // semester/year key when viewMode isn't 'month'.
+        let viewMode = 'month'; // 'month' | 'semester' | 'year'
+        let currentPeriodKey = currentMonthKey;
 
         // Table Sorting State
         let sortField = 'date';
@@ -932,6 +976,81 @@
         function formatMonthShort(monthKey) {
             const [y, m] = monthKey.split('-').map(Number);
             return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short' }) + " '" + String(y).slice(2);
+        }
+
+        // SEMESTER / YEAR ROLLUP HELPERS
+        // Semesters are an approximation of the Finnish academic calendar:
+        // H1 (Spring) = Jan-Jun, H2 (Fall) = Jul-Dec. Internal keys stay
+        // "YYYY-H1"/"YYYY-H2" so they sort correctly; display labels map to
+        // "Spring"/"Fall".
+        function getSemesterKeyFromMonth(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            return `${y}-${m <= 6 ? 'H1' : 'H2'}`;
+        }
+
+        function getYearKeyFromMonth(monthKey) {
+            return monthKey.split('-')[0];
+        }
+
+        function monthKeyInPeriod(monthKey, periodKey, mode) {
+            if (mode === 'month') return monthKey === periodKey;
+            if (mode === 'semester') return getSemesterKeyFromMonth(monthKey) === periodKey;
+            if (mode === 'year') return getYearKeyFromMonth(monthKey) === periodKey;
+            return false;
+        }
+
+        function formatPeriodLabel(periodKey, mode) {
+            if (mode === 'month') return formatMonthLabel(periodKey);
+            if (mode === 'year') return periodKey;
+            if (mode === 'semester') {
+                const [y, half] = periodKey.split('-');
+                return `${half === 'H1' ? 'Spring' : 'Fall'} ${y}`;
+            }
+            return periodKey;
+        }
+
+        function getAvailablePeriods(mode) {
+            if (mode === 'month') return getAvailableMonths();
+            const monthKeys = new Set(transactions.map(t => getMonthKeyFromDate(t.date)));
+            monthKeys.add(getCurrentMonthKey());
+            monthKeys.add(currentMonthKey);
+            const periodSet = new Set();
+            monthKeys.forEach(mk => periodSet.add(mode === 'semester' ? getSemesterKeyFromMonth(mk) : getYearKeyFromMonth(mk)));
+            return Array.from(periodSet).sort().reverse();
+        }
+
+        function getPeriodTransactions(periodKey, mode) {
+            return transactions.filter(t => monthKeyInPeriod(getMonthKeyFromDate(t.date), periodKey, mode));
+        }
+
+        // All month keys relevant to a period — driven by actual transactions and
+        // any month with an explicit budget set, so aggregated budget totals don't
+        // silently drop a month that has a target but no logged activity yet.
+        function getPeriodMonthKeys(periodKey, mode) {
+            if (mode === 'month') return [periodKey];
+            const monthSet = new Set([
+                ...transactions.map(t => getMonthKeyFromDate(t.date)),
+                ...Object.keys(budgets),
+                getCurrentMonthKey(),
+                currentMonthKey
+            ]);
+            return Array.from(monthSet).filter(mk => monthKeyInPeriod(mk, periodKey, mode)).sort();
+        }
+
+        // Same "target budget, falling back to that month's income" logic used
+        // for a single month, just summed across every month in the period. For
+        // mode 'month' this reduces to exactly the old single-month behavior.
+        function getPeriodPlanningBudget(periodKey, mode) {
+            const monthKeys = getPeriodMonthKeys(periodKey, mode);
+            let total = 0;
+            monthKeys.forEach(mk => {
+                const monthIncome = transactions
+                    .filter(t => getMonthKeyFromDate(t.date) === mk && t.type === 'income')
+                    .reduce((s, t) => s + t.amount, 0);
+                const monthBudget = getBudgetForMonth(mk);
+                total += monthBudget > 0 ? monthBudget : monthIncome;
+            });
+            return Math.round(total * 100) / 100;
         }
 
         function generateId() {
@@ -1065,7 +1184,7 @@
 
         document.getElementById('log-type').addEventListener('change', updateCategoryOptions);
 
-        // Month Selector
+        // Period Selector (Month / Semester / Year)
         function getAvailableMonths() {
             const set = new Set(transactions.map(t => getMonthKeyFromDate(t.date)));
             set.add(getCurrentMonthKey());
@@ -1073,18 +1192,49 @@
             return Array.from(set).sort().reverse();
         }
 
-        function renderMonthSelector() {
+        function renderPeriodSelector() {
             const sel = document.getElementById('month-selector');
-            const months = getAvailableMonths();
+            const periods = getAvailablePeriods(viewMode);
 
-            sel.innerHTML = months.map(m => `<option value="${m}">${formatMonthLabel(m)}</option>`).join('');
-            sel.value = months.includes(currentMonthKey) ? currentMonthKey : months[0];
-            currentMonthKey = sel.value;
+            sel.innerHTML = periods.map(p => `<option value="${p}">${formatPeriodLabel(p, viewMode)}</option>`).join('');
+
+            if (viewMode === 'month') {
+                sel.value = periods.includes(currentMonthKey) ? currentMonthKey : periods[0];
+                currentMonthKey = sel.value;
+                currentPeriodKey = currentMonthKey;
+            } else {
+                sel.value = periods.includes(currentPeriodKey) ? currentPeriodKey : periods[0];
+                currentPeriodKey = sel.value;
+            }
         }
 
+        // Shows/hides the controls that only make sense for a single month
+        // (editing a monthly target, carryover) and relabels the KPI cards.
+        function updateViewModeUI() {
+            const isMonth = viewMode === 'month';
+            document.getElementById('budget-edit-btn').style.display = isMonth ? 'inline-block' : 'none';
+            document.querySelector('.carryover-toggle-group').style.display = isMonth ? 'flex' : 'none';
+            const targetLabel = viewMode === 'month' ? 'Monthly Target' : (viewMode === 'semester' ? 'Semester Target' : 'Yearly Target');
+            const incomeLabel = viewMode === 'month' ? 'Monthly Income' : (viewMode === 'semester' ? 'Semester Income' : 'Yearly Income');
+            document.getElementById('kpi-target-label').textContent = targetLabel;
+            document.getElementById('kpi-income-label').textContent = incomeLabel;
+        }
+
+        document.getElementById('view-mode-selector').addEventListener('change', function() {
+            viewMode = this.value;
+            updateViewModeUI();
+            renderPeriodSelector();
+            renderAll();
+        });
+
         document.getElementById('month-selector').addEventListener('change', function() {
-            currentMonthKey = this.value;
-            checkAndApplyRecurring();
+            if (viewMode === 'month') {
+                currentMonthKey = this.value;
+                currentPeriodKey = currentMonthKey;
+                checkAndApplyRecurring();
+            } else {
+                currentPeriodKey = this.value;
+            }
             renderAll();
         });
 
@@ -1093,6 +1243,7 @@
             renderTransactions();
             updateChart();
             renderTrends();
+            renderSavingsGoals();
         }
 
         // Storage Load / Save
@@ -1317,6 +1468,150 @@
             updateChart();
         }
 
+        // SAVINGS GOALS
+        function loadSavingsGoals() {
+            const saved = localStorage.getItem(SAVINGS_GOALS_KEY);
+            if (saved) {
+                try { savingsGoals = JSON.parse(saved) || []; } catch (e) { savingsGoals = []; }
+            }
+        }
+
+        function saveSavingsGoals() {
+            localStorage.setItem(SAVINGS_GOALS_KEY, JSON.stringify(savingsGoals));
+        }
+
+        function openNewGoalForm() {
+            editingGoalId = null;
+            document.getElementById('goal-name-input').value = '';
+            document.getElementById('goal-target-input').value = '';
+            document.getElementById('goal-deadline-input').value = '';
+            document.getElementById('goal-form-container').style.display = 'block';
+            document.getElementById('goal-name-input').focus();
+        }
+
+        function openEditGoalForm(id) {
+            const goal = savingsGoals.find(g => g.id === id);
+            if (!goal) return;
+            editingGoalId = id;
+            document.getElementById('goal-name-input').value = goal.name;
+            document.getElementById('goal-target-input').value = goal.target;
+            document.getElementById('goal-deadline-input').value = goal.deadline || '';
+            document.getElementById('goal-form-container').style.display = 'block';
+            document.getElementById('goal-name-input').focus();
+        }
+
+        function closeGoalForm() {
+            editingGoalId = null;
+            document.getElementById('goal-form-container').style.display = 'none';
+        }
+
+        function saveGoalForm() {
+            const name = document.getElementById('goal-name-input').value.trim();
+            const target = parseFloat(document.getElementById('goal-target-input').value);
+            const deadline = document.getElementById('goal-deadline-input').value || null;
+
+            if (!name || isNaN(target) || target <= 0) {
+                alert('Please enter a goal name and a target amount greater than €0.');
+                return;
+            }
+
+            if (editingGoalId) {
+                const goal = savingsGoals.find(g => g.id === editingGoalId);
+                if (goal) {
+                    goal.name = name;
+                    goal.target = Math.round(target * 100) / 100;
+                    goal.deadline = deadline;
+                }
+            } else {
+                savingsGoals.push({
+                    id: generateId(),
+                    name,
+                    target: Math.round(target * 100) / 100,
+                    saved: 0,
+                    deadline,
+                    color: GOAL_COLORS[savingsGoals.length % GOAL_COLORS.length]
+                });
+            }
+
+            saveSavingsGoals();
+            closeGoalForm();
+            renderSavingsGoals();
+        }
+
+        function promptAddFunds(id) {
+            const goal = savingsGoals.find(g => g.id === id);
+            if (!goal) return;
+
+            const input = prompt(`Add funds to "${goal.name}" (currently €${formatMoney(goal.saved)} of €${formatMoney(goal.target)}).\nEnter an amount to add (use a negative number to withdraw):`, '');
+            if (input === null) return;
+
+            const amount = parseFloat(input);
+            if (isNaN(amount) || amount === 0) return;
+
+            goal.saved = Math.max(0, Math.round((goal.saved + amount) * 100) / 100);
+            saveSavingsGoals();
+            renderSavingsGoals();
+        }
+
+        function deleteGoal(id) {
+            const goal = savingsGoals.find(g => g.id === id);
+            const name = goal ? goal.name : 'this goal';
+            if (!confirm(`Delete the savings goal "${name}"? This won't affect any transactions, only the goal tracker.`)) return;
+
+            savingsGoals = savingsGoals.filter(g => g.id !== id);
+            saveSavingsGoals();
+            renderSavingsGoals();
+        }
+
+        function renderSavingsGoals() {
+            const list = document.getElementById('goals-list');
+            const emptyMsg = document.getElementById('goals-empty-msg');
+
+            if (savingsGoals.length === 0) {
+                list.innerHTML = '';
+                emptyMsg.style.display = 'block';
+                return;
+            }
+            emptyMsg.style.display = 'none';
+
+            list.innerHTML = savingsGoals.map(goal => {
+                const pct = Math.min((goal.saved / goal.target) * 100, 100).toFixed(0);
+                const reached = goal.saved >= goal.target;
+                const safeName = escapeHtml(goal.name);
+                const safeId = escapeHtml(String(goal.id));
+                let deadlineText = '';
+                if (goal.deadline) {
+                    const d = new Date(goal.deadline + 'T00:00:00');
+                    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const overdue = !reached && d.getTime() < new Date(getLocalDateString() + 'T00:00:00').getTime();
+                    deadlineText = ` · ${overdue ? 'was due' : 'by'} ${label}${overdue ? ' (overdue)' : ''}`;
+                }
+
+                return `
+                    <div class="goal-item" style="margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border-color);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:8px; flex-wrap:wrap;">
+                            <div class="legend-label-group">
+                                <span class="color-dot" aria-hidden="true" style="background-color:${goal.color};"></span>
+                                <strong>${safeName}</strong>
+                                ${reached ? '<span class="badge badge-income">🎉 Reached</span>' : ''}
+                            </div>
+                            <div class="action-btns">
+                                <button class="btn-action" onclick="promptAddFunds('${safeId}')" title="Add or remove funds">+ €</button>
+                                <button class="btn-action edit" onclick="openEditGoalForm('${safeId}')" title="Edit goal">✏️</button>
+                                <button class="btn-action delete" onclick="deleteGoal('${safeId}')" title="Delete goal">&times;</button>
+                            </div>
+                        </div>
+                        <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:4px;">
+                            €${formatMoney(goal.saved)} / €${formatMoney(goal.target)} (${pct}%)${deadlineText}
+                        </div>
+                        <div class="cat-cap-bar-track">
+                            <div class="cat-cap-bar-fill" style="width:${pct}%; background-color:${goal.color};"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         // TABLE SORTING & RENDERING
         function handleSort(field) {
             if (sortField === field) {
@@ -1336,6 +1631,13 @@
             });
         }
 
+        function resetTableFilters() {
+            document.getElementById('table-search').value = '';
+            document.getElementById('table-type-filter').value = 'all';
+            document.getElementById('table-cat-filter').value = 'all';
+            renderTransactions();
+        }
+
         function renderTransactions() {
             const tbody = document.getElementById('log-table-body');
             const emptyMsg = document.getElementById('empty-log-msg');
@@ -1345,21 +1647,21 @@
             const typeFilter = document.getElementById('table-type-filter').value;
             const catFilter = document.getElementById('table-cat-filter').value;
 
-            let monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
+            let periodTransactions = getPeriodTransactions(currentPeriodKey, viewMode);
 
             // Apply Filters
             if (searchTerm) {
-                monthTransactions = monthTransactions.filter(t => t.desc.toLowerCase().includes(searchTerm));
+                periodTransactions = periodTransactions.filter(t => t.desc.toLowerCase().includes(searchTerm));
             }
             if (typeFilter !== 'all') {
-                monthTransactions = monthTransactions.filter(t => t.type === typeFilter);
+                periodTransactions = periodTransactions.filter(t => t.type === typeFilter);
             }
             if (catFilter !== 'all') {
-                monthTransactions = monthTransactions.filter(t => t.category === catFilter);
+                periodTransactions = periodTransactions.filter(t => t.category === catFilter);
             }
 
             // Apply Sorting
-            monthTransactions.sort((a, b) => {
+            periodTransactions.sort((a, b) => {
                 let valA = a[sortField];
                 let valB = b[sortField];
                 if (typeof valA === 'string') valA = valA.toLowerCase();
@@ -1370,15 +1672,15 @@
                 return 0;
             });
 
-            if (monthTransactions.length === 0) {
-                emptyMsg.textContent = `No matching transactions found for ${formatMonthLabel(currentMonthKey)}.`;
+            if (periodTransactions.length === 0) {
+                emptyMsg.textContent = `No matching transactions found for ${formatPeriodLabel(currentPeriodKey, viewMode)}.`;
                 emptyMsg.style.display = 'block';
                 return;
             }
 
             emptyMsg.style.display = 'none';
 
-            monthTransactions.forEach(item => {
+            periodTransactions.forEach(item => {
                 const tr = document.createElement('tr');
                 const badgeClass = item.type === 'income' ? 'badge-income' : 'badge-expense';
                 const amountPrefix = item.type === 'income' ? '+€' : '-€';
@@ -1477,7 +1779,10 @@
 
             saveTransactions();
             currentMonthKey = getMonthKeyFromDate(date);
-            renderMonthSelector();
+            viewMode = 'month';
+            document.getElementById('view-mode-selector').value = 'month';
+            updateViewModeUI();
+            renderPeriodSelector();
             renderAll();
 
             document.getElementById('log-desc').value = '';
@@ -1538,7 +1843,7 @@
 
             transactions = transactions.filter(t => t.id !== id);
             saveTransactions();
-            renderMonthSelector();
+            renderPeriodSelector();
             renderAll();
         }
 
@@ -1556,19 +1861,23 @@
             transactions.unshift(newEntry);
             saveTransactions();
             currentMonthKey = getCurrentMonthKey();
-            renderMonthSelector();
+            viewMode = 'month';
+            document.getElementById('view-mode-selector').value = 'month';
+            updateViewModeUI();
+            renderPeriodSelector();
             renderAll();
         }
 
         // EXPORT & IMPORT (JSON & CSV)
         function exportJSON() {
             const exportObj = {
-                version: "2.3",
+                version: "2.4",
                 exportedAt: new Date().toISOString(),
                 transactions,
                 budgets,
                 categoryCaps,
-                recurringTemplates
+                recurringTemplates,
+                savingsGoals
             };
 
             const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
@@ -1651,6 +1960,21 @@
             return { id, desc, category, type, amount, startMonth, endMonth, skipMonths };
         }
 
+        function sanitizeSavingsGoal(item) {
+            if (!item || typeof item !== 'object') return null;
+
+            const name = typeof item.name === 'string' ? item.name.slice(0, 100) : '';
+            const target = Math.round(parseFloat(item.target) * 100) / 100;
+            const saved = Math.round(parseFloat(item.saved) * 100) / 100;
+            const deadline = (typeof item.deadline === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.deadline)) ? item.deadline : null;
+            const color = (typeof item.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(item.color)) ? item.color : GOAL_COLORS[0];
+            const id = (typeof item.id === 'string' && item.id.length > 0) ? item.id : generateId();
+
+            if (!name || !isFinite(target) || target <= 0 || !isFinite(saved)) return null;
+
+            return { id, name, target, saved: Math.max(0, saved), deadline, color };
+        }
+
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1707,10 +2031,24 @@
                         }
                         saveRecurringTemplates();
                     }
+                    if (Array.isArray(importedObj.savingsGoals)) {
+                        const cleanedGoals = importedObj.savingsGoals.map(sanitizeSavingsGoal).filter(g => g !== null);
+                        if (shouldMerge) {
+                            cleanedGoals.forEach(g => {
+                                if (!savingsGoals.some(sg => sg.id === g.id)) savingsGoals.push(g);
+                            });
+                        } else {
+                            savingsGoals = cleanedGoals;
+                        }
+                        saveSavingsGoals();
+                    }
 
                     currentMonthKey = getCurrentMonthKey();
+                    viewMode = 'month';
+                    document.getElementById('view-mode-selector').value = 'month';
+                    updateViewModeUI();
                     checkAndApplyRecurring();
-                    renderMonthSelector();
+                    renderPeriodSelector();
                     renderAll();
                 } catch (err) {
                     alert("Failed to import: Please ensure you selected a valid JSON backup file.");
@@ -1736,22 +2074,25 @@
 
         // CHART & KPI UPDATE
         function updateChart() {
-            const monthTransactions = transactions.filter(t => getMonthKeyFromDate(t.date) === currentMonthKey);
+            const periodTransactions = getPeriodTransactions(currentPeriodKey, viewMode);
 
             const incomeTotal = Math.round(
-                monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) * 100
+                periodTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) * 100
             ) / 100;
 
-            const targetBudget = getBudgetForMonth(currentMonthKey);
-            let planningBudget = targetBudget > 0 ? targetBudget : incomeTotal;
-            const usingFallbackBudget = targetBudget <= 0;
+            // In Month view this is exactly the old single-month behavior. In
+            // Semester/Year view it's the sum of each included month's target
+            // (falling back to that month's income where no target was set).
+            const targetBudget = viewMode === 'month' ? getBudgetForMonth(currentPeriodKey) : getPeriodPlanningBudget(currentPeriodKey, viewMode);
+            let planningBudget = viewMode === 'month' ? (targetBudget > 0 ? targetBudget : incomeTotal) : targetBudget;
+            const usingFallbackBudget = viewMode === 'month' && targetBudget <= 0;
 
-            // Carryover Calculation
+            // Carryover only applies to a single month's roll-over balance.
             let carryoverAmount = 0;
             const carryoverSubtext = document.getElementById('kpi-carryover-subtext');
-            
-            if (carryoverEnabled) {
-                carryoverAmount = calculatePreviousCarryover(currentMonthKey);
+
+            if (viewMode === 'month' && carryoverEnabled) {
+                carryoverAmount = calculatePreviousCarryover(currentPeriodKey);
                 planningBudget += carryoverAmount;
                 if (carryoverAmount !== 0) {
                     const sign = carryoverAmount > 0 ? '+' : '';
@@ -1768,7 +2109,7 @@
                 label: c.label,
                 color: c.color,
                 value: Math.round(
-                    monthTransactions
+                    periodTransactions
                         .filter(t => t.type === 'expense' && t.category === c.value)
                         .reduce((sum, t) => sum + t.amount, 0) * 100
                 ) / 100
@@ -1826,7 +2167,7 @@
                 emptyRing.attr("d", arc({ startAngle: 0, endAngle: 2 * Math.PI })).style("display", "block");
                 svg.selectAll("path.slice").remove();
                 svg.selectAll(".slice-label").remove();
-                document.getElementById('legend').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size:0.85rem;">No expenses logged for this month yet</div>';
+                document.getElementById('legend').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size:0.85rem;">No expenses logged for this period yet</div>';
                 return;
             } else {
                 emptyRing.style("display", "none");
@@ -1894,7 +2235,10 @@
                 const capVal = categoryCaps[item.category] || 0;
                 let capBarHtml = '';
 
-                if (capVal > 0) {
+                // Category caps are inherently monthly figures — comparing a
+                // summed semester/year total against a single month's cap would
+                // be misleading, so only show it in Month view.
+                if (viewMode === 'month' && capVal > 0) {
                     const catPct = Math.min((item.value / capVal) * 100, 100).toFixed(0);
                     const barColor = item.value > capVal ? 'var(--color-deficit)' : item.color;
                     capBarHtml = `
@@ -1936,7 +2280,9 @@
                 monthTotals[getCurrentMonthKey()] = { income: 0, expense: 0 };
             }
 
-            const months = Object.keys(monthTotals).sort();
+            // Show only the most recent 3 months so the chart doesn't grow
+            // sideways forever as the app accumulates history.
+            const months = Object.keys(monthTotals).sort().slice(-3);
             const chartData = months.map(mk => ({
                 month: mk,
                 label: formatMonthShort(mk),
@@ -1988,7 +2334,10 @@
                     .style('cursor', 'pointer')
                     .on('click', function(event, d) {
                         currentMonthKey = d.month;
-                        renderMonthSelector();
+                        viewMode = 'month';
+                        document.getElementById('view-mode-selector').value = 'month';
+                        updateViewModeUI();
+                        renderPeriodSelector();
                         checkAndApplyRecurring();
                         renderAll();
                     })
@@ -2004,6 +2353,20 @@
             });
         }
 
+        // PWA / OFFLINE SUPPORT
+        // sw.js must be deployed alongside this file (same folder) for this to
+        // do anything. Registration is a no-op (fails silently) when opened via
+        // file:// or when sw.js isn't reachable — the app still works normally,
+        // it just won't be installable/offline-capable in that case.
+        function registerServiceWorker() {
+            if (!('serviceWorker' in navigator)) return;
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {
+                    // Offline support unavailable in this context — safe to ignore.
+                });
+            });
+        }
+
         // INITIALIZE APP
         initTheme();
         updateCategoryOptions();
@@ -2011,6 +2374,8 @@
         loadBudgets();
         loadCategoryCaps();
         loadRecurringTemplates();
+        loadSavingsGoals();
+        registerServiceWorker();
 
         carryoverEnabled = localStorage.getItem(CARRYOVER_KEY) === 'true';
         document.getElementById('carryover-toggle').checked = carryoverEnabled;
@@ -2021,9 +2386,11 @@
             const availableMonths = Array.from(new Set(transactions.map(t => getMonthKeyFromDate(t.date)))).sort().reverse();
             currentMonthKey = availableMonths[0];
         }
+        currentPeriodKey = currentMonthKey;
 
         checkAndApplyRecurring();
-        renderMonthSelector();
+        updateViewModeUI();
+        renderPeriodSelector();
         renderAll();
     </script>
 </body>

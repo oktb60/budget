@@ -913,6 +913,14 @@
             return `${prevY}-${prevM}`;
         }
 
+        function getNextMonthKey(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            const nextDate = new Date(y, m, 1);
+            const nextY = nextDate.getFullYear();
+            const nextM = String(nextDate.getMonth() + 1).padStart(2, '0');
+            return `${nextY}-${nextM}`;
+        }
+
         function formatMonthLabel(monthKey) {
             const [y, m] = monthKey.split('-').map(Number);
             return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -1141,39 +1149,52 @@
         }
 
         // RECURRING TRANSACTIONS ENGINE
+        // Backfills every elapsed month up through the later of "today" and the
+        // month currently being viewed — not just whichever month you happen to
+        // have clicked into. Otherwise recurring income/expenses silently don't
+        // exist (and don't show up in Monthly Trends or carryover math) for any
+        // month you never manually visited.
         function checkAndApplyRecurring() {
-            // Find all unique recurring items from past transactions
-            const recurringTemplates = transactions.filter(t => t.recurring === true);
-            const uniqueTemplates = [];
-            
-            recurringTemplates.forEach(t => {
+            const recurringItems = transactions.filter(t => t.recurring === true);
+            if (recurringItems.length === 0) return;
+
+            // For each distinct recurring item, anchor on its EARLIEST occurrence
+            // so we backfill forward from when it actually started.
+            const templates = {};
+            recurringItems.forEach(t => {
                 const key = `${t.desc.toLowerCase()}_${t.category}_${t.type}_${t.amount}`;
-                if (!uniqueTemplates.some(u => `${u.desc.toLowerCase()}_${u.category}_${u.type}_${u.amount}` === key)) {
-                    uniqueTemplates.push(t);
+                if (!templates[key] || t.date < templates[key].date) {
+                    templates[key] = t;
                 }
             });
 
-            let addedNew = false;
-            uniqueTemplates.forEach(tmpl => {
-                const existsInCurrentMonth = transactions.some(t => 
-                    getMonthKeyFromDate(t.date) === currentMonthKey &&
-                    t.desc.toLowerCase() === tmpl.desc.toLowerCase() &&
-                    t.category === tmpl.category &&
-                    t.amount === tmpl.amount
-                );
+            // "YYYY-MM" strings compare correctly lexicographically.
+            const targetMonth = getCurrentMonthKey() > currentMonthKey ? getCurrentMonthKey() : currentMonthKey;
 
-                if (!existsInCurrentMonth) {
-                    const newEntry = {
-                        id: generateId(),
-                        date: `${currentMonthKey}-01`,
-                        type: tmpl.type,
-                        desc: tmpl.desc,
-                        category: tmpl.category,
-                        amount: tmpl.amount,
-                        recurring: true
-                    };
-                    transactions.unshift(newEntry);
-                    addedNew = true;
+            let addedNew = false;
+            Object.values(templates).forEach(tmpl => {
+                let cursor = getMonthKeyFromDate(tmpl.date);
+                while (cursor < targetMonth) {
+                    cursor = getNextMonthKey(cursor);
+                    const existsInMonth = transactions.some(t =>
+                        getMonthKeyFromDate(t.date) === cursor &&
+                        t.desc.toLowerCase() === tmpl.desc.toLowerCase() &&
+                        t.category === tmpl.category &&
+                        t.amount === tmpl.amount
+                    );
+
+                    if (!existsInMonth) {
+                        transactions.unshift({
+                            id: generateId(),
+                            date: `${cursor}-01`,
+                            type: tmpl.type,
+                            desc: tmpl.desc,
+                            category: tmpl.category,
+                            amount: tmpl.amount,
+                            recurring: true
+                        });
+                        addedNew = true;
+                    }
                 }
             });
 
@@ -1705,7 +1726,7 @@
                     const catPct = Math.min((item.value / capVal) * 100, 100).toFixed(0);
                     const barColor = item.value > capVal ? 'var(--color-deficit)' : item.color;
                     capBarHtml = `
-                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; display:flex; justify-between;">
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; display:flex; justify-content:space-between;">
                             <span>€${formatMoney(item.value)} / €${formatMoney(capVal)} cap</span>
                             <span>${catPct}%</span>
                         </div>

@@ -866,6 +866,7 @@
         const BUDGETS_KEY = 'lappeenranta_budgets_data';
         const CAT_CAPS_KEY = 'lappeenranta_cat_caps_data';
         const CARRYOVER_KEY = 'lappeenranta_carryover_enabled';
+        const RECURRING_TEMPLATES_KEY = 'lappeenranta_recurring_templates_data';
 
         const categoryOptions = [
             { value: 'Groceries', label: 'Groceries', type: 'expense', color: '#10b981' },
@@ -881,6 +882,8 @@
         let transactions = [];
         let budgets = {}; // { "YYYY-MM": amount }
         let categoryCaps = {}; // { "Groceries": 150, ... }
+        // { id, desc, category, type, amount, startMonth, endMonth (null = ongoing), skipMonths: [] }
+        let recurringTemplates = [];
         let currentMonthKey = getCurrentMonthKey();
         let editingTransactionId = null;
         let carryoverEnabled = false;
@@ -1138,6 +1141,17 @@
             localStorage.setItem(CAT_CAPS_KEY, JSON.stringify(categoryCaps));
         }
 
+        function loadRecurringTemplates() {
+            const saved = localStorage.getItem(RECURRING_TEMPLATES_KEY);
+            if (saved) {
+                try { recurringTemplates = JSON.parse(saved) || []; } catch (e) { recurringTemplates = []; }
+            }
+        }
+
+        function saveRecurringTemplates() {
+            localStorage.setItem(RECURRING_TEMPLATES_KEY, JSON.stringify(recurringTemplates));
+        }
+
         function getBudgetForMonth(monthKey) {
             const val = budgets[monthKey];
             return (typeof val === 'number' && isFinite(val) && val >= 0) ? val : 0;
@@ -1149,38 +1163,85 @@
         }
 
         // RECURRING TRANSACTIONS ENGINE
-        // Backfills every elapsed month up through the later of "today" and the
-        // month currently being viewed — not just whichever month you happen to
-        // have clicked into. Otherwise recurring income/expenses silently don't
-        // exist (and don't show up in Monthly Trends or carryover math) for any
-        // month you never manually visited.
-        function checkAndApplyRecurring() {
-            const recurringItems = transactions.filter(t => t.recurring === true);
-            if (recurringItems.length === 0) return;
+        //
+        // Recurring items are backed by explicit templates (recurringTemplates),
+        // not inferred by re-scanning transactions each time. Each template knows
+        // its startMonth, an optional endMonth (series has been stopped), and a
+        // skipMonths list (an individual occurrence was deleted but the series
+        // continues). This is what makes "delete this month's entry" and "stop
+        // this from repeating" actually stick, instead of the next backfill pass
+        // silently recreating whatever looks "missing."
+        //
+        // One-time migration: older data (or a fresh JSON import) may have plain
+        // recurring:true transactions with no recurringTemplateId. Group those by
+        // desc+category+type+amount, anchor a template on the earliest occurrence
+        // of each group, and tag the matching transactions. Safe to call repeatedly.
+        function migrateLegacyRecurringToTemplates() {
+            const legacyRecurring = transactions.filter(t => t.recurring === true && !t.recurringTemplateId);
+            if (legacyRecurring.length === 0) return false;
 
-            // For each distinct recurring item, anchor on its EARLIEST occurrence
-            // so we backfill forward from when it actually started.
-            const templates = {};
-            recurringItems.forEach(t => {
+            const groups = {};
+            legacyRecurring.forEach(t => {
                 const key = `${t.desc.toLowerCase()}_${t.category}_${t.type}_${t.amount}`;
-                if (!templates[key] || t.date < templates[key].date) {
-                    templates[key] = t;
-                }
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(t);
             });
+
+            let changed = false;
+            Object.values(groups).forEach(group => {
+                group.sort((a, b) => (a.date < b.date ? -1 : 1));
+                const earliest = group[0];
+
+                let tmpl = recurringTemplates.find(rt =>
+                    rt.desc.toLowerCase() === earliest.desc.toLowerCase() &&
+                    rt.category === earliest.category && rt.type === earliest.type && rt.amount === earliest.amount
+                );
+                if (!tmpl) {
+                    tmpl = {
+                        id: generateId(),
+                        desc: earliest.desc,
+                        category: earliest.category,
+                        type: earliest.type,
+                        amount: earliest.amount,
+                        startMonth: getMonthKeyFromDate(earliest.date),
+                        endMonth: null,
+                        skipMonths: []
+                    };
+                    recurringTemplates.push(tmpl);
+                    changed = true;
+                }
+                group.forEach(t => {
+                    if (!t.recurringTemplateId) { t.recurringTemplateId = tmpl.id; changed = true; }
+                });
+            });
+
+            if (changed) { saveRecurringTemplates(); saveTransactions(); }
+            return changed;
+        }
+
+        // Backfills every elapsed month, for every active template, up through the
+        // later of "today" and the month currently being viewed — not just
+        // whichever month you happen to have clicked into. Otherwise recurring
+        // income/expenses silently don't exist (and don't show up in Monthly
+        // Trends or carryover math) for any month you never manually visited.
+        function checkAndApplyRecurring() {
+            migrateLegacyRecurringToTemplates();
+            if (recurringTemplates.length === 0) return;
 
             // "YYYY-MM" strings compare correctly lexicographically.
             const targetMonth = getCurrentMonthKey() > currentMonthKey ? getCurrentMonthKey() : currentMonthKey;
 
             let addedNew = false;
-            Object.values(templates).forEach(tmpl => {
-                let cursor = getMonthKeyFromDate(tmpl.date);
-                while (cursor < targetMonth) {
+            recurringTemplates.forEach(tmpl => {
+                const stopAt = (tmpl.endMonth && tmpl.endMonth < targetMonth) ? tmpl.endMonth : targetMonth;
+                let cursor = tmpl.startMonth;
+
+                while (cursor < stopAt) {
                     cursor = getNextMonthKey(cursor);
+                    if (tmpl.skipMonths.includes(cursor)) continue;
+
                     const existsInMonth = transactions.some(t =>
-                        getMonthKeyFromDate(t.date) === cursor &&
-                        t.desc.toLowerCase() === tmpl.desc.toLowerCase() &&
-                        t.category === tmpl.category &&
-                        t.amount === tmpl.amount
+                        t.recurringTemplateId === tmpl.id && getMonthKeyFromDate(t.date) === cursor
                     );
 
                     if (!existsInMonth) {
@@ -1191,7 +1252,8 @@
                             desc: tmpl.desc,
                             category: tmpl.category,
                             amount: tmpl.amount,
-                            recurring: true
+                            recurring: true,
+                            recurringTemplateId: tmpl.id
                         });
                         addedNew = true;
                     }
@@ -1199,6 +1261,24 @@
             });
 
             if (addedNew) saveTransactions();
+        }
+
+        // Stops a template from generating any further months. Occurrences
+        // already logged (including this one) are untouched.
+        function endRecurringSeries(id) {
+            const item = transactions.find(t => t.id === id);
+            if (!item || !item.recurringTemplateId) return;
+            const tmpl = recurringTemplates.find(rt => rt.id === item.recurringTemplateId);
+            if (!tmpl) return;
+
+            const asOfMonth = getMonthKeyFromDate(item.date);
+            if (!confirm(`Stop "${item.desc}" from repeating after ${formatMonthLabel(asOfMonth)}? Months already logged (including this one) won't be affected.`)) {
+                return;
+            }
+
+            tmpl.endMonth = (tmpl.endMonth && tmpl.endMonth < asOfMonth) ? tmpl.endMonth : asOfMonth;
+            saveRecurringTemplates();
+            renderAll();
         }
 
         // CATEGORY BUDGET CAPS UI
@@ -1307,6 +1387,9 @@
                 const categoryDef = categoryOptions.find(c => c.value === item.category);
                 const safeCategory = escapeHtml(categoryDef ? categoryDef.label : String(item.category));
                 const recurringBadge = item.recurring ? `<span class="badge badge-recurring">↺ Monthly</span>` : '';
+                const stopBtn = item.recurringTemplateId
+                    ? `<button class="btn-action" onclick="endRecurringSeries('${escapeHtml(String(item.id))}')" title="Stop this from repeating in future months">⏸️</button>`
+                    : '';
 
                 tr.innerHTML = `
                     <td>${safeDate}</td>
@@ -1317,6 +1400,7 @@
                     <td>
                         <div class="action-btns">
                             <button class="btn-action edit" onclick="startEditTransaction('${escapeHtml(String(item.id))}')" title="Edit entry">✏️</button>
+                            ${stopBtn}
                             <button class="btn-action delete" onclick="deleteTransaction('${escapeHtml(String(item.id))}')" title="Delete entry">&times;</button>
                         </div>
                     </td>
@@ -1334,7 +1418,7 @@
             const category = document.getElementById('log-category').value;
             const amount = parseFloat(document.getElementById('log-amount').value);
             const dateInput = document.getElementById('log-date').value;
-            const recurring = document.getElementById('log-recurring').checked;
+            const recurringChecked = document.getElementById('log-recurring').checked;
             const date = /^\d{4}-\d{2}-\d{2}$/.test(dateInput) ? dateInput : getLocalDateString();
 
             if (!desc || isNaN(amount) || amount <= 0) return;
@@ -1343,12 +1427,51 @@
                 // Update existing
                 const idx = transactions.findIndex(t => t.id === editingTransactionId);
                 if (idx !== -1) {
-                    transactions[idx] = { id: editingTransactionId, date, type, desc, category, amount, recurring };
+                    const existing = transactions[idx];
+                    let recurringTemplateId = existing.recurringTemplateId;
+
+                    if (existing.recurringTemplateId && !recurringChecked) {
+                        // Was part of a series, "Repeat" unchecked -> end the series
+                        // as of this occurrence. Past/other months are untouched.
+                        const tmpl = recurringTemplates.find(rt => rt.id === existing.recurringTemplateId);
+                        if (tmpl) {
+                            const thisMonth = getMonthKeyFromDate(date);
+                            const prevMonth = getPreviousMonthKey(thisMonth);
+                            tmpl.endMonth = (tmpl.endMonth && tmpl.endMonth < prevMonth) ? tmpl.endMonth : prevMonth;
+                            saveRecurringTemplates();
+                        }
+                        recurringTemplateId = undefined;
+                    } else if (!existing.recurringTemplateId && recurringChecked) {
+                        // Wasn't recurring before, now it is -> start a new series
+                        // anchored on this occurrence.
+                        const tmpl = {
+                            id: generateId(), desc, category, type, amount,
+                            startMonth: getMonthKeyFromDate(date), endMonth: null, skipMonths: []
+                        };
+                        recurringTemplates.push(tmpl);
+                        saveRecurringTemplates();
+                        recurringTemplateId = tmpl.id;
+                    }
+                    // Otherwise (still linked & still checked): this is just a
+                    // per-month edit (e.g. amount changed) — the template stays as
+                    // the source of truth for other months, this occurrence simply
+                    // overrides its own values.
+
+                    transactions[idx] = { id: editingTransactionId, date, type, desc, category, amount, recurring: recurringChecked, recurringTemplateId };
                 }
                 cancelEditMode();
             } else {
                 // Add new
-                const newEntry = { id: generateId(), date, type, desc, category, amount, recurring };
+                const newEntry = { id: generateId(), date, type, desc, category, amount, recurring: recurringChecked };
+                if (recurringChecked) {
+                    const tmpl = {
+                        id: generateId(), desc, category, type, amount,
+                        startMonth: getMonthKeyFromDate(date), endMonth: null, skipMonths: []
+                    };
+                    recurringTemplates.push(tmpl);
+                    saveRecurringTemplates();
+                    newEntry.recurringTemplateId = tmpl.id;
+                }
                 transactions.unshift(newEntry);
             }
 
@@ -1394,9 +1517,23 @@
         function deleteTransaction(id) {
             const item = transactions.find(t => t.id === id);
             const descName = item ? item.desc : 'this entry';
-            
-            if (!confirm(`Are you sure you want to delete "${descName}"?`)) {
+            const confirmMsg = (item && item.recurringTemplateId)
+                ? `Delete "${descName}"? This won't affect the rest of the recurring series — only this month's occurrence.`
+                : `Are you sure you want to delete "${descName}"?`;
+
+            if (!confirm(confirmMsg)) {
                 return;
+            }
+
+            // If this occurrence came from a recurring template, mark its month as
+            // skipped so the next backfill pass doesn't silently recreate it.
+            if (item && item.recurringTemplateId) {
+                const tmpl = recurringTemplates.find(rt => rt.id === item.recurringTemplateId);
+                if (tmpl) {
+                    const month = getMonthKeyFromDate(item.date);
+                    if (!tmpl.skipMonths.includes(month)) tmpl.skipMonths.push(month);
+                    saveRecurringTemplates();
+                }
             }
 
             transactions = transactions.filter(t => t.id !== id);
@@ -1426,11 +1563,12 @@
         // EXPORT & IMPORT (JSON & CSV)
         function exportJSON() {
             const exportObj = {
-                version: "2.2",
+                version: "2.3",
                 exportedAt: new Date().toISOString(),
                 transactions,
                 budgets,
-                categoryCaps
+                categoryCaps,
+                recurringTemplates
             };
 
             const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
@@ -1483,12 +1621,34 @@
             const desc = typeof item.desc === 'string' ? item.desc.slice(0, 200) : '';
             const recurring = !!item.recurring;
             const id = (typeof item.id === 'string' && item.id.length > 0) ? item.id : generateId();
+            const recurringTemplateId = (typeof item.recurringTemplateId === 'string' && item.recurringTemplateId) ? item.recurringTemplateId : undefined;
 
             if (!type || !category || !isFinite(amount) || amount <= 0) return null;
             const categoryDef = categoryOptions.find(c => c.value === category);
             if (!categoryDef || categoryDef.type !== type) return null;
 
-            return { id, date, type, desc, category, amount, recurring };
+            const result = { id, date, type, desc, category, amount, recurring };
+            if (recurringTemplateId) result.recurringTemplateId = recurringTemplateId;
+            return result;
+        }
+
+        function sanitizeRecurringTemplate(item) {
+            if (!item || typeof item !== 'object') return null;
+
+            const type = (item.type === 'income' || item.type === 'expense') ? item.type : null;
+            const category = validCategoryValues.includes(item.category) ? item.category : null;
+            const amount = Math.round(parseFloat(item.amount) * 100) / 100;
+            const desc = typeof item.desc === 'string' ? item.desc.slice(0, 200) : '';
+            const startMonth = (typeof item.startMonth === 'string' && /^\d{4}-\d{2}$/.test(item.startMonth)) ? item.startMonth : null;
+            const endMonth = (typeof item.endMonth === 'string' && /^\d{4}-\d{2}$/.test(item.endMonth)) ? item.endMonth : null;
+            const skipMonths = Array.isArray(item.skipMonths) ? item.skipMonths.filter(m => typeof m === 'string' && /^\d{4}-\d{2}$/.test(m)) : [];
+            const id = (typeof item.id === 'string' && item.id.length > 0) ? item.id : generateId();
+
+            if (!type || !category || !isFinite(amount) || amount <= 0 || !desc || !startMonth) return null;
+            const categoryDef = categoryOptions.find(c => c.value === category);
+            if (!categoryDef || categoryDef.type !== type) return null;
+
+            return { id, desc, category, type, amount, startMonth, endMonth, skipMonths };
         }
 
         function importData(event) {
@@ -1536,8 +1696,20 @@
                         categoryCaps = { ...categoryCaps, ...importedObj.categoryCaps };
                         saveCategoryCaps();
                     }
+                    if (Array.isArray(importedObj.recurringTemplates)) {
+                        const cleanedTemplates = importedObj.recurringTemplates.map(sanitizeRecurringTemplate).filter(t => t !== null);
+                        if (shouldMerge) {
+                            cleanedTemplates.forEach(t => {
+                                if (!recurringTemplates.some(rt => rt.id === t.id)) recurringTemplates.push(t);
+                            });
+                        } else {
+                            recurringTemplates = cleanedTemplates;
+                        }
+                        saveRecurringTemplates();
+                    }
 
                     currentMonthKey = getCurrentMonthKey();
+                    checkAndApplyRecurring();
                     renderMonthSelector();
                     renderAll();
                 } catch (err) {
@@ -1838,6 +2010,7 @@
         loadTransactions();
         loadBudgets();
         loadCategoryCaps();
+        loadRecurringTemplates();
 
         carryoverEnabled = localStorage.getItem(CARRYOVER_KEY) === 'true';
         document.getElementById('carryover-toggle').checked = carryoverEnabled;

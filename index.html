@@ -981,23 +981,40 @@
         }
 
         // SEMESTER / YEAR ROLLUP HELPERS
-        // Fixed to your actual academic calendar:
-        //   Semester 1 = August-December
-        //   Semester 2 = January-June
-        //   July belongs to neither (between semesters) — it still shows up in
-        //   Year view, just not in either semester rollup.
-        // Internal keys use the semester's start month ("YYYY-08" / "YYYY-01")
-        // so they sort chronologically; the display label maps that back to
-        // "Semester 1" / "Semester 2".
-        function getSemesterKeyFromMonth(monthKey) {
+        // Academic-year calendar:
+        //   Semester 1 = August-December (Fall)
+        //   Semester 2 = January-June (Spring), belonging to the SAME academic
+        //   year as the Fall that preceded it — e.g. Semester 2 of academic year
+        //   2026 runs January-June 2027, pairing with Semester 1 (Aug-Dec 2026).
+        //   July belongs to neither semester, and Year view is now the academic
+        //   year itself (Semester 1 + Semester 2 combined), so July is excluded
+        //   from Year view too — it's summer break, outside both terms.
+        //
+        // "Academic year N" is identified by the calendar year its Fall
+        // semester starts in (e.g. academic year 2026 = Aug 2026 - Jun 2027).
+        function getAcademicYearStart(monthKey) {
             const [y, m] = monthKey.split('-').map(Number);
-            if (m >= 8) return `${y}-08`;  // Semester 1: Aug-Dec
-            if (m <= 6) return `${y}-01`;  // Semester 2: Jan-Jun
-            return null;                    // July: not part of a semester
+            if (m >= 8) return y;       // Aug-Dec: this calendar year's academic year
+            if (m <= 6) return y - 1;   // Jan-Jun: belongs to the academic year that started last Aug
+            return null;                 // July: between academic years
         }
 
+        // Semester key: "<academicYearStart>-S1" or "<academicYearStart>-S2".
+        // Sorts correctly both within one academic year (S1 before S2) and
+        // across years, since S1's academic year start IS its calendar year.
+        function getSemesterKeyFromMonth(monthKey) {
+            const [, m] = monthKey.split('-').map(Number);
+            const ay = getAcademicYearStart(monthKey);
+            if (ay === null) return null;
+            return `${ay}-${m >= 8 ? 'S1' : 'S2'}`;
+        }
+
+        // Year key here means ACADEMIC year (not calendar year) — see comment
+        // above. Kept as getYearKeyFromMonth since mode 'year' always refers to
+        // this now.
         function getYearKeyFromMonth(monthKey) {
-            return monthKey.split('-')[0];
+            const ay = getAcademicYearStart(monthKey);
+            return ay === null ? null : String(ay);
         }
 
         function monthKeyInPeriod(monthKey, periodKey, mode) {
@@ -1006,16 +1023,23 @@
                 const sk = getSemesterKeyFromMonth(monthKey);
                 return sk !== null && sk === periodKey;
             }
-            if (mode === 'year') return getYearKeyFromMonth(monthKey) === periodKey;
+            if (mode === 'year') {
+                const yk = getYearKeyFromMonth(monthKey);
+                return yk !== null && yk === periodKey;
+            }
             return false;
         }
 
         function formatPeriodLabel(periodKey, mode) {
             if (mode === 'month') return formatMonthLabel(periodKey);
-            if (mode === 'year') return periodKey;
+            if (mode === 'year') {
+                const ay = Number(periodKey);
+                return `${ay}–${ay + 1} Academic Year`;
+            }
             if (mode === 'semester') {
-                const [y, startMonth] = periodKey.split('-');
-                return startMonth === '08' ? `Semester 1 ${y} (Aug–Dec)` : `Semester 2 ${y} (Jan–Jun)`;
+                const [ayStr, sem] = periodKey.split('-');
+                const ay = Number(ayStr);
+                return sem === 'S1' ? `Semester 1 ${ay} (Aug–Dec)` : `Semester 2 ${ay + 1} (Jan–Jun)`;
             }
             return periodKey;
         }
@@ -1228,8 +1252,8 @@
             const isMonth = viewMode === 'month';
             document.getElementById('budget-edit-btn').style.display = isMonth ? 'inline-block' : 'none';
             document.querySelector('.carryover-toggle-group').style.display = isMonth ? 'flex' : 'none';
-            const targetLabel = viewMode === 'month' ? 'Monthly Target' : (viewMode === 'semester' ? 'Semester Target' : 'Yearly Target');
-            const incomeLabel = viewMode === 'month' ? 'Monthly Income' : (viewMode === 'semester' ? 'Semester Income' : 'Yearly Income');
+            const targetLabel = viewMode === 'month' ? 'Monthly Target' : (viewMode === 'semester' ? 'Semester Target' : 'Academic Year Target');
+            const incomeLabel = viewMode === 'month' ? 'Monthly Income' : (viewMode === 'semester' ? 'Semester Income' : 'Academic Year Income');
             document.getElementById('kpi-target-label').textContent = targetLabel;
             document.getElementById('kpi-income-label').textContent = incomeLabel;
 

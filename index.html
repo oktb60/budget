@@ -11,6 +11,12 @@
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/wallet.png">
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Lappeenranta%20Student%20Budget%20%26%20Tracker%22%2C%22short_name%22%3A%22Budget%20Tracker%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A//img.icons8.com/color/192/wallet.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%7D%2C%7B%22src%22%3A%22https%3A//img.icons8.com/color/512/wallet.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%7D%5D%7D">
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Optional cloud sync (see firebaseConfig below). Safe to leave as-is if
+         you never set up a Firebase project — the app works 100% offline via
+         localStorage either way, these scripts just won't do anything. -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -139,6 +145,122 @@
             .btn-icon {
                 font-size: 1.05rem;
             }
+        }
+
+        /* Cloud Sync (Firebase) */
+        #sync-status-btn.is-signed-in {
+            border-color: #10b981;
+            color: #059669;
+        }
+
+        body.dark-theme #sync-status-btn.is-signed-in {
+            color: #10b981;
+        }
+
+        #sync-status-btn.has-error {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            padding: 1.75rem;
+            width: 100%;
+            max-width: 380px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-box h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.15rem;
+        }
+
+        .modal-desc {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin: 0 0 1rem 0;
+            line-height: 1.4;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 0.9rem;
+            right: 0.9rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.3rem;
+            line-height: 1;
+            cursor: pointer;
+            min-width: 32px;
+            min-height: 32px;
+        }
+
+        .sync-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 0.75rem;
+        }
+
+        .sync-form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        .sync-error-msg {
+            color: #ef4444;
+            font-size: 0.8rem;
+            min-height: 1.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .sync-modal-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            border: 1px solid #2563eb;
+            color: #fff;
+            padding: 8px 16px;
+            min-height: 40px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .sync-last-synced {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin: 0 0 1rem 0;
         }
 
         /* Top Summary KPI Cards */
@@ -819,11 +941,38 @@
                 <select id="month-selector" class="select-input" aria-label="Select period to view"></select>
             </div>
             <div class="header-buttons">
+                <button class="btn-theme" id="sync-status-btn" style="display:none;" title="Cloud sync"><span class="btn-icon" id="sync-status-icon">☁️</span><span class="btn-label" id="sync-status-label"> Sync</span></button>
                 <button class="btn-theme" onclick="exportJSON()" title="Download backup JSON file"><span class="btn-icon">📥</span><span class="btn-label"> JSON Backup</span></button>
                 <button class="btn-theme" onclick="exportCSV()" title="Export transactions to CSV spreadsheet"><span class="btn-icon">📊</span><span class="btn-label"> Export CSV</span></button>
                 <button class="btn-theme" onclick="document.getElementById('import-file').click()" title="Restore transactions from JSON"><span class="btn-icon">📤</span><span class="btn-label"> Import JSON</span></button>
                 <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
                 <button class="btn-theme" id="theme-toggle" title="Toggle Dark/Light Mode"><span class="btn-icon" id="theme-toggle-icon">🌙</span><span class="btn-label" id="theme-toggle-label"> Dark Mode</span></button>
+            </div>
+        </div>
+
+        <!-- Cloud Sync Modal (hidden unless firebaseConfig below is filled in) -->
+        <div class="modal-overlay" id="sync-modal-overlay" style="display:none;">
+            <div class="modal-box">
+                <button class="modal-close" id="sync-modal-close" aria-label="Close">&times;</button>
+                <div id="sync-modal-signedout">
+                    <h3>Cloud Sync</h3>
+                    <p class="modal-desc">Sign in to sync your budget across all your devices in real time. Your data still works fully offline either way.</p>
+                    <div class="sync-form-group">
+                        <input type="email" id="sync-email-input" placeholder="Email" autocomplete="email">
+                        <input type="password" id="sync-password-input" placeholder="Password (min 6 characters)" autocomplete="current-password">
+                    </div>
+                    <div class="sync-error-msg" id="sync-error-msg"></div>
+                    <div class="sync-modal-actions">
+                        <button class="btn-primary" id="sync-signin-btn">Sign In</button>
+                        <button class="btn-theme" id="sync-signup-btn">Create Account</button>
+                    </div>
+                </div>
+                <div id="sync-modal-signedin" style="display:none;">
+                    <h3>Cloud Sync</h3>
+                    <p class="modal-desc">Signed in as <strong id="sync-user-email"></strong></p>
+                    <p class="sync-last-synced" id="sync-last-synced-text"></p>
+                    <button class="btn-theme" id="sync-signout-btn">Sign Out</button>
+                </div>
             </div>
         </div>
 
@@ -1330,6 +1479,7 @@
             carryoverEnabled = enabled;
             localStorage.setItem(CARRYOVER_KEY, enabled ? 'true' : 'false');
             updateChart();
+            scheduleCloudSync();
         }
 
         // Category Select Dropdown Population
@@ -1447,6 +1597,7 @@
 
         function saveTransactions() {
             localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
+            scheduleCloudSync();
         }
 
         function loadBudgets() {
@@ -1460,6 +1611,7 @@
 
         function saveBudgets() {
             localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
+            scheduleCloudSync();
         }
 
         function loadCategoryCaps() {
@@ -1471,6 +1623,7 @@
 
         function saveCategoryCaps() {
             localStorage.setItem(CAT_CAPS_KEY, JSON.stringify(categoryCaps));
+            scheduleCloudSync();
         }
 
         function loadRecurringTemplates() {
@@ -1482,6 +1635,7 @@
 
         function saveRecurringTemplates() {
             localStorage.setItem(RECURRING_TEMPLATES_KEY, JSON.stringify(recurringTemplates));
+            scheduleCloudSync();
         }
 
         function getBudgetForMonth(monthKey) {
@@ -1659,6 +1813,7 @@
 
         function saveSavingsGoals() {
             localStorage.setItem(SAVINGS_GOALS_KEY, JSON.stringify(savingsGoals));
+            scheduleCloudSync();
         }
 
         function openNewGoalForm() {
@@ -2564,6 +2719,277 @@
             });
         }
 
+        // CLOUD SYNC (Firebase)
+        // Fill in your own Firebase project's config below (Firebase Console >
+        // Project Settings > General > Your apps > SDK setup and configuration)
+        // to turn on real-time cross-device sync. These values are meant to be
+        // public/visible in page source — Firebase secures your data through
+        // the Firestore Security Rules tied to the signed-in user, not by
+        // hiding this config. Left as placeholders, firebaseEnabled stays
+        // false and the app behaves exactly as it did before: fully local,
+        // fully offline, via localStorage only.
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        const firebaseEnabled = typeof firebase !== 'undefined' &&
+            !!firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
+
+        let cloudAuth = null;
+        let cloudDb = null;
+        let currentUser = null;
+        let cloudDocUnsubscribe = null;
+        let cloudSyncTimer = null;
+        let isApplyingRemoteState = false;
+        let lastSyncedAt = null;
+
+        if (firebaseEnabled) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                cloudAuth = firebase.auth();
+                cloudDb = firebase.firestore();
+                try { cloudDb.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) { /* unsupported browser context — safe to ignore */ }
+            } catch (e) {
+                console.error('Firebase init failed:', e);
+            }
+        }
+
+        function cloudUserDocRef(uid) {
+            return cloudDb.collection('budgetData').doc(uid);
+        }
+
+        function buildCloudPayload() {
+            return {
+                transactions, budgets, categoryCaps, recurringTemplates, savingsGoals,
+                carryoverEnabled,
+                updatedAt: new Date().toISOString()
+            };
+        }
+
+        // Debounced push — every save*() function below calls this, so rapid
+        // successive edits (e.g. typing a budget number) collapse into one
+        // network write instead of one per keystroke.
+        function scheduleCloudSync() {
+            if (!firebaseEnabled || !cloudAuth || !currentUser || isApplyingRemoteState) return;
+            updateSyncStatusUI('syncing');
+            clearTimeout(cloudSyncTimer);
+            cloudSyncTimer = setTimeout(pushLocalStateToCloud, 1200);
+        }
+
+        function pushLocalStateToCloud() {
+            if (!firebaseEnabled || !cloudAuth || !currentUser) return;
+            cloudUserDocRef(currentUser.uid).set(buildCloudPayload())
+                .then(() => { lastSyncedAt = new Date(); updateSyncStatusUI('synced'); })
+                .catch(err => { console.error('Cloud sync failed:', err); updateSyncStatusUI('error'); });
+        }
+
+        // Applies a remote Firestore snapshot to local state. Guarded by
+        // isApplyingRemoteState so the save*() calls it triggers don't
+        // immediately schedule another push right back to the cloud (which
+        // would otherwise loop indefinitely between two open devices).
+        function applyRemoteState(data) {
+            if (!data || typeof data !== 'object') return;
+            isApplyingRemoteState = true;
+            try {
+                if (Array.isArray(data.transactions)) {
+                    transactions = data.transactions.map(sanitizeTransaction).filter(t => t !== null);
+                    saveTransactions();
+                }
+                if (data.budgets && typeof data.budgets === 'object') {
+                    budgets = data.budgets;
+                    saveBudgets();
+                }
+                if (data.categoryCaps && typeof data.categoryCaps === 'object') {
+                    categoryCaps = data.categoryCaps;
+                    saveCategoryCaps();
+                }
+                if (Array.isArray(data.recurringTemplates)) {
+                    recurringTemplates = data.recurringTemplates.map(sanitizeRecurringTemplate).filter(t => t !== null);
+                    saveRecurringTemplates();
+                }
+                if (Array.isArray(data.savingsGoals)) {
+                    savingsGoals = data.savingsGoals.map(sanitizeSavingsGoal).filter(g => g !== null);
+                    saveSavingsGoals();
+                }
+                if (typeof data.carryoverEnabled === 'boolean') {
+                    carryoverEnabled = data.carryoverEnabled;
+                    localStorage.setItem(CARRYOVER_KEY, carryoverEnabled ? 'true' : 'false');
+                    const cb = document.getElementById('carryover-toggle');
+                    if (cb) cb.checked = carryoverEnabled;
+                }
+
+                checkAndApplyRecurring();
+                updateViewModeUI();
+                renderPeriodSelector();
+                renderAll();
+            } finally {
+                isApplyingRemoteState = false;
+            }
+        }
+
+        function attachCloudListener(uid) {
+            detachCloudListener();
+            cloudDocUnsubscribe = cloudUserDocRef(uid).onSnapshot(doc => {
+                if (!doc.exists) return;
+                // hasPendingWrites is true for the local echo of our own
+                // pushLocalStateToCloud() write — skip it to avoid re-applying
+                // (and re-rendering) data we just sent.
+                if (doc.metadata.hasPendingWrites) return;
+                applyRemoteState(doc.data());
+                lastSyncedAt = new Date();
+                updateSyncStatusUI('synced');
+            }, err => {
+                console.error('Cloud listener error:', err);
+                updateSyncStatusUI('error');
+            });
+        }
+
+        function detachCloudListener() {
+            if (cloudDocUnsubscribe) { cloudDocUnsubscribe(); cloudDocUnsubscribe = null; }
+        }
+
+        function updateSyncStatusUI(state) {
+            const btn = document.getElementById('sync-status-btn');
+            if (!btn) return;
+            const icon = document.getElementById('sync-status-icon');
+            const label = document.getElementById('sync-status-label');
+            btn.classList.remove('is-signed-in', 'has-error');
+
+            if (!currentUser) {
+                icon.textContent = '☁️';
+                label.textContent = ' Sync';
+                btn.title = 'Sign in to sync across devices';
+                return;
+            }
+            if (state === 'syncing') {
+                icon.textContent = '🔄';
+                label.textContent = ' Syncing…';
+                btn.classList.add('is-signed-in');
+            } else if (state === 'error') {
+                icon.textContent = '⚠️';
+                label.textContent = ' Sync error';
+                btn.classList.add('has-error');
+            } else {
+                icon.textContent = '☁️';
+                label.textContent = ' Synced';
+                btn.classList.add('is-signed-in');
+            }
+            btn.title = `Signed in as ${currentUser.email}`;
+        }
+
+        function friendlyAuthError(err) {
+            const map = {
+                'auth/invalid-email': 'That email address looks invalid.',
+                'auth/user-disabled': 'This account has been disabled.',
+                'auth/user-not-found': 'No account found with that email.',
+                'auth/wrong-password': 'Incorrect password.',
+                'auth/email-already-in-use': 'An account already exists with that email.',
+                'auth/weak-password': 'Password must be at least 6 characters.',
+                'auth/invalid-credential': 'Incorrect email or password.',
+                'auth/network-request-failed': 'Network error — check your connection.'
+            };
+            return (err && map[err.code]) || (err && err.message) || 'Something went wrong. Please try again.';
+        }
+
+        function openSyncModal() {
+            document.getElementById('sync-error-msg').textContent = '';
+            document.getElementById('sync-modal-overlay').style.display = 'flex';
+            if (currentUser) {
+                document.getElementById('sync-modal-signedout').style.display = 'none';
+                document.getElementById('sync-modal-signedin').style.display = 'block';
+                document.getElementById('sync-user-email').textContent = currentUser.email;
+                document.getElementById('sync-last-synced-text').textContent = lastSyncedAt
+                    ? `Last synced ${lastSyncedAt.toLocaleTimeString()}`
+                    : 'Synced';
+            } else {
+                document.getElementById('sync-modal-signedout').style.display = 'block';
+                document.getElementById('sync-modal-signedin').style.display = 'none';
+                document.getElementById('sync-email-input').value = '';
+                document.getElementById('sync-password-input').value = '';
+            }
+        }
+
+        function closeSyncModal() {
+            document.getElementById('sync-modal-overlay').style.display = 'none';
+        }
+
+        // Wires up the sync button + modal and starts listening for auth
+        // state changes. A no-op (button stays hidden) when firebaseConfig
+        // above is still placeholder values.
+        function initCloudSyncUI() {
+            const btn = document.getElementById('sync-status-btn');
+            if (!firebaseEnabled || !cloudAuth) {
+                if (btn) btn.style.display = 'none';
+                return;
+            }
+            if (btn) btn.style.display = 'inline-flex';
+            updateSyncStatusUI('signed-out');
+
+            btn.addEventListener('click', openSyncModal);
+            document.getElementById('sync-modal-close').addEventListener('click', closeSyncModal);
+            document.getElementById('sync-modal-overlay').addEventListener('click', (e) => {
+                if (e.target.id === 'sync-modal-overlay') closeSyncModal();
+            });
+
+            document.getElementById('sync-signin-btn').addEventListener('click', () => {
+                const email = document.getElementById('sync-email-input').value.trim();
+                const password = document.getElementById('sync-password-input').value;
+                const errEl = document.getElementById('sync-error-msg');
+                errEl.textContent = '';
+                if (!email || !password) { errEl.textContent = 'Enter your email and password.'; return; }
+                cloudAuth.signInWithEmailAndPassword(email, password)
+                    .then(() => closeSyncModal())
+                    .catch(err => { errEl.textContent = friendlyAuthError(err); });
+            });
+
+            document.getElementById('sync-signup-btn').addEventListener('click', () => {
+                const email = document.getElementById('sync-email-input').value.trim();
+                const password = document.getElementById('sync-password-input').value;
+                const errEl = document.getElementById('sync-error-msg');
+                errEl.textContent = '';
+                if (!email || !password) { errEl.textContent = 'Enter your email and password.'; return; }
+                if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+                cloudAuth.createUserWithEmailAndPassword(email, password)
+                    .then(() => closeSyncModal())
+                    .catch(err => { errEl.textContent = friendlyAuthError(err); });
+            });
+
+            document.getElementById('sync-signout-btn').addEventListener('click', () => {
+                detachCloudListener();
+                cloudAuth.signOut().then(() => closeSyncModal());
+            });
+
+            cloudAuth.onAuthStateChanged(user => {
+                currentUser = user;
+                if (user) {
+                    updateSyncStatusUI('syncing');
+                    cloudUserDocRef(user.uid).get().then(snap => {
+                        if (snap.exists) {
+                            // Returning device / second sign-in — cloud is the
+                            // source of truth, pull it down.
+                            applyRemoteState(snap.data());
+                        } else {
+                            // First-ever sign-in for this account — seed the
+                            // cloud with whatever's currently on this device.
+                            pushLocalStateToCloud();
+                        }
+                        attachCloudListener(user.uid);
+                        updateSyncStatusUI('synced');
+                    }).catch(err => {
+                        console.error('Initial cloud fetch failed:', err);
+                        updateSyncStatusUI('error');
+                    });
+                } else {
+                    detachCloudListener();
+                    updateSyncStatusUI('signed-out');
+                }
+            });
+        }
+
         // PWA / OFFLINE SUPPORT
         // sw.js must be deployed alongside this file (same folder) for this to
         // do anything. Registration is a no-op (fails silently) when opened via
@@ -2587,6 +3013,7 @@
         loadRecurringTemplates();
         loadSavingsGoals();
         registerServiceWorker();
+        initCloudSyncUI();
 
         carryoverEnabled = localStorage.getItem(CARRYOVER_KEY) === 'true';
         document.getElementById('carryover-toggle').checked = carryoverEnabled;

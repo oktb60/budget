@@ -950,7 +950,7 @@
             </div>
         </div>
 
-        <!-- Cloud Sync Modal (hidden unless  below is filled in) -->
+        <!-- Cloud Sync Modal (hidden unless firebaseConfig below is filled in) -->
         <div class="modal-overlay" id="sync-modal-overlay" style="display:none;">
             <div class="modal-box">
                 <button class="modal-close" id="sync-modal-close" aria-label="Close">&times;</button>
@@ -2728,7 +2728,7 @@
         // hiding this config. Left as placeholders, firebaseEnabled stays
         // false and the app behaves exactly as it did before: fully local,
         // fully offline, via localStorage only.
-        const  = {
+        const firebaseConfig = {
             apiKey: "AIzaSyDvyE_ER_UkCons6xwUvsIbCqBkph6whZ8",
             authDomain: "budget-743be.firebaseapp.com",
             projectId: "budget-743be",
@@ -2737,7 +2737,7 @@
             appId: "1:55277502260:web:701d4255a34c30480b6f61"
         };
         const firebaseEnabled = typeof firebase !== 'undefined' &&
-            !!firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyDvyE_ER_UkCons6xwUvsIbCqBkph6whZ8";
+            !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('YOUR_');
 
         let cloudAuth = null;
         let cloudDb = null;

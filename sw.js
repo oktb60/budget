@@ -1,11 +1,17 @@
 // Service worker for Lappeenranta Student Budget & Tracker.
-// Cache-first strategy: serve from cache instantly when available, otherwise
-// fetch from the network and cache the result for next time. This is what
-// makes the app usable offline and installable as a standalone PWA.
 //
-// Bump CACHE_NAME whenever index.html changes so returning visitors pick up
-// the new version instead of a stale cached copy.
-const CACHE_NAME = 'lappeenranta-budget-cache-v1';
+// Strategy:
+//  - index.html / navigation requests: NETWORK-FIRST. Whenever the device is
+//    online, you always get the latest deployed version — no more waiting on
+//    a stale cached copy after an update. Falls back to the cached copy only
+//    when the network request fails (i.e. you're offline).
+//  - Everything else (the D3 CDN script, etc.): CACHE-FIRST, since those
+//    rarely change and don't need to be revalidated on every load.
+//
+// Bump CACHE_NAME whenever you want to force a clean cutover for existing
+// installs (not strictly required anymore for index.html, since that's
+// network-first now, but still clears out old cached entries).
+const CACHE_NAME = 'lappeenranta-budget-cache-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -33,9 +39,30 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+function isNavigationRequest(request) {
+  return request.mode === 'navigate' || request.destination === 'document';
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  if (isNavigationRequest(event.request)) {
+    // Network-first: always try to get the freshest index.html when online.
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Cache-first for everything else (static assets, the D3 script, etc.).
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

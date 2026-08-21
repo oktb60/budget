@@ -180,6 +180,13 @@
             padding: 1.75rem;
             width: 100%;
             max-width: 380px;
+            /* On a phone with the on-screen keyboard open (e.g. typing into
+               the password field), the visible viewport can be short enough
+               that the box itself needs to scroll to keep the buttons
+               reachable, rather than relying on the outer overlay. */
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
@@ -198,16 +205,21 @@
 
         .modal-close {
             position: absolute;
-            top: 0.9rem;
-            right: 0.9rem;
+            top: 0.5rem;
+            right: 0.5rem;
             background: transparent;
             border: none;
             color: var(--text-muted);
             font-size: 1.3rem;
             line-height: 1;
             cursor: pointer;
-            min-width: 32px;
-            min-height: 32px;
+            /* 40px min to match the app's other icon buttons (e.g.
+               .btn-edit-budget) — comfortably tappable on a phone. */
+            min-width: 40px;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .sync-form-group {
@@ -2922,7 +2934,7 @@
         // above is still placeholder values.
         function initCloudSyncUI() {
             const btn = document.getElementById('sync-status-btn');
-            if (!firebaseEnabled || !cloudAuth) {
+            if (!firebaseEnabled || !cloudAuth || !cloudDb) {
                 if (btn) btn.style.display = 'none';
                 return;
             }
